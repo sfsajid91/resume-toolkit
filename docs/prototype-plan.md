@@ -1,6 +1,6 @@
 # Resume Toolkit — Concrete Prototype Plan
 
-Status: project organization and dependency setup complete; Phase 1 is next. Product modules are not implemented. Local Phase 0 export smoke checks passed; manual DOCX editing and an authorized live Jev call remain unverified.
+Status: Phase 1 (contracts and validation) implemented and verified; Phase 2 (local exports) is next. Local Phase 0 PDF/DOCX smoke checks passed; manual DOCX edit/save/reopen and an authorized live Jev call remain open.
 
 This is the build specification for the prototype. It refines [agent-tool-direction.md](agent-tool-direction.md) and supersedes conflicting contracts in [research-synthesis.md](research-synthesis.md). Planning documents live in `docs/`; the project layout and current verification state are recorded below.
 
@@ -356,11 +356,11 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 
 ### Immediate next three steps
 
-Phase 0 is not fully complete. Finish its DOCX editing check in Step 2 and its authorized live Jev request/cancellation check in Step 3. Neither blocks local Phase 1 work.
+Phase 0 remains open for the manual DOCX edit/save/reopen check and an authorized live Jev request/cancellation check. Neither blocks Phase 2 local export work.
 
-1. **Next — Phase 1: contracts and validation.** Implement strict Zod application/report schemas, generated JSON Schema, one-time input snapshots/hashes, locatable validation issues, and `schema`/`validate` CLI behavior. Add the synthetic fixture and focused Bun checks for consumer-visible invariants. **Gate:** satisfy the Phase 1 row above, including stable pointers, evidence ownership and uniqueness, date/quote/URL checks, warnings, unchanged input, and no network.
+1. **Completed — Phase 1: contracts and validation.** Implemented strict Zod application/report schemas, generated JSON Schema, one-time input snapshots/hashes, locatable issues, `schema`/`validate` CLI behavior, the synthetic fixture, and focused Bun tests. **Gate:** `bunx tsc --noEmit` and `bun test` pass; subprocess checks exercise exit codes 0, 1, 2, and 4, evidence warnings, and unchanged fixture bytes.
 
-2. **Then — Phase 2: local exports.** Resolve one ordered resume model and fixed design; implement Typst PDF and native DOCX serializers, template/font assets, safe single-file output, and A4/Letter support. **Gate:** satisfy the Phase 2 row above: compact/dense/edge content and links survive, PDF pages are visually inspected, rendering works offline, and a user edits a generated DOCX bullet in Writer, saves, and reopens it with list formatting intact.
+2. **Next — Phase 2: local exports.** Resolve one ordered resume model and fixed design; implement Typst PDF and native DOCX serializers, template/font assets, safe single-file output, and A4/Letter support. **Gate:** satisfy the Phase 2 row above: compact/dense/edge content and links survive, PDF pages are visually inspected, rendering works offline, and a user edits a generated DOCX bullet in Writer, saves, and reopens it with list formatting intact.
 
 3. **Then — Phase 3: Jev evaluation.** Add minimized projection, exact offline `--dry-run`, explicit consent, one SDK batch, cancellation deadline, answer validation, and reports. **Gate:** complete an authorized synthetic live call with observed model/usage/findings plus controlled invalid-answer/auth/timeout cases. Explicit user authorization is required for every live request; configured credentials alone are not consent.
 
@@ -389,7 +389,7 @@ Use a few realistic support examples plus mutations of magnitude/ownership and m
 
 ## 11. Prerequisites and current verification
 
-The initial project setup now consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and the planning documents under `docs/`. `bun install --frozen-lockfile` succeeded. Source modules and future asset/skill/example directories are added only when their implementation phase needs real files.
+The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 adds `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. The TypeScript and Bun test gates pass.
 
 ### Observed local smoke checks
 
@@ -399,7 +399,7 @@ The initial project setup now consists of a private Bun package, exact dependenc
 - `@typesafe-ai/sdk` 0.6.0 imported and instantiated under Bun. No Jev request was sent; live answer/model/usage and cancellation remain unverified until explicitly authorized.
 - The repository dependency smoke test imported `docx`, Zod, and `@typesafe-ai/sdk`, instantiated the SDK client without making a request, and parsed a small strict Zod value.
 
-These are disposable feasibility experiments, not product CLI acceptance. Phase 0 is not fully complete. The outstanding Writer and live Jev checks are assigned to Steps 2 and 3 in §9; neither blocks Phase 1. The exact sequence and gates are listed above.
+These are disposable feasibility experiments, not product CLI acceptance. Phase 0 is not fully complete. The outstanding Writer and live Jev checks remain open: manual DOCX editing is a Phase 2 check, and live Jev remains a Phase 3 check. Neither blocks local Phase 2 work.
 
 ## 12. Documentation sources checked for planning
 

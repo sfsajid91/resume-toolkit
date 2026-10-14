@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "example-backend",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Alex Example",
+      "email": "alex@example.com",
+      "links": []
+    },
+    "summary": [],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "id": "exp-api",
+            "name": "Example Co",
+            "title": "Software Engineer",
+            "start": "2025-01",
+            "end": "2026-01",
+            "bullets": [
+              {
+                "id": "claim-cache",
+                "text": "Implemented TypeScript API caching, contributing to a measured 20% reduction in p95 latency.",
+                "evidenceIds": ["fact-cache"]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-ts", "label": "TypeScript", "evidenceIds": ["fact-cache"] }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "fact-cache",
+      "entryId": "exp-api",
+      "text": "Implemented TypeScript API caching in production. Team measurements showed p95 latency fell from 250 ms to 200 ms. I implemented the cache, not the full team's performance work.",
+      "source": { "kind": "user_statement", "locator": "Reviewed career note 3" },
+      "confirmedByUser": true
+    }
+  ],
+  "job": {
+    "id": "job-backend",
+    "company": "Example Hiring Co",
+    "title": "Backend Engineer",
+    "rawText": "Required: production TypeScript API experience. Preferred: Kubernetes experience.",
+    "requirements": [
+      {
+        "id": "req-ts",
+        "text": "Production TypeScript API experience",
+        "quote": "production TypeScript API experience",
+        "importance": "required"
+      },
+      {
+        "id": "req-k8s",
+        "text": "Kubernetes experience",
+        "quote": "Kubernetes experience",
+        "importance": "preferred"
+      }
+    ]
+  }
+}
