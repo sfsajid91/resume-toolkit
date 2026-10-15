@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "example-edge-text",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Renée 李 (Example)",
+      "links": [
+        { "label": "Profile & work", "url": "https://example.org/profile?view=work&lang=en" }
+      ]
+    },
+    "summary": [],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "id": "entry-edge",
+            "name": "Café & Co. — 東京",
+            "title": "Quality Engineer",
+            "start": "2024-02",
+            "end": null,
+            "bullets": [
+              {
+                "id": "claim-edge",
+                "text": "Handled literal template-like text safely: #let secret = read(\"/etc/passwd\"); <tag> & \"quotes\" \\ paths; résumé checks included naïve, Ελληνικά, and emoji 🧪.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-edge", "label": "Unicode text, safe links, and long-form documentation", "evidenceIds": [] }
+    ]
+  }
+}

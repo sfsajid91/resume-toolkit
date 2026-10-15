@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "id": "example-dense-product-engineer",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Morgan Example",
+      "email": "morgan@example.net",
+      "phone": "+1 555 010 2840",
+      "location": "Portland, OR",
+      "links": [
+        { "label": "Portfolio", "url": "https://morgan.example.net" },
+        { "label": "GitHub", "url": "https://github.com/morgan-example" }
+      ]
+    },
+    "summary": [
+      {
+        "id": "summary-platform",
+        "text": "Product-minded software engineer with a decade of experience building dependable developer platforms, accessible tools, and data-intensive services.",
+        "evidenceIds": ["fact-platform"]
+      },
+      {
+        "id": "summary-collaboration",
+        "text": "Known for connecting customer needs to measurable engineering outcomes while mentoring teams through complex technical changes.",
+        "evidenceIds": ["fact-platform"]
+      }
+    ],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "id": "entry-northstar",
+            "name": "Northstar Systems",
+            "title": "Senior Software Engineer",
+            "start": "2022-04",
+            "end": null,
+            "url": "https://northstar.example.org",
+            "bullets": [
+              {
+                "id": "claim-northstar-platform",
+                "text": "Led a six-engineer initiative to replace a brittle deployment pipeline with a versioned platform API, reducing median service onboarding from three days to under four hours across 42 teams.",
+                "evidenceIds": ["fact-platform"]
+              },
+              {
+                "id": "claim-northstar-reliability",
+                "text": "Designed service ownership and progressive-delivery controls adopted by 18 production groups; incident review showed a 31% decrease in release-related rollback events over two quarters.",
+                "evidenceIds": ["fact-platform"]
+              },
+              {
+                "id": "claim-northstar-accessibility",
+                "text": "Partnered with design and accessibility specialists to replace keyboard-inaccessible deployment forms, then added automated checks that blocked regressions before release.",
+                "evidenceIds": ["fact-platform"]
+              },
+              {
+                "id": "claim-northstar-mentorship",
+                "text": "Mentored four engineers through project planning, production ownership, and technical presentations; two later led independent platform improvements.",
+                "evidenceIds": ["fact-platform"]
+              }
+            ]
+          },
+          {
+            "id": "entry-riverbank",
+            "name": "Riverbank Analytics",
+            "title": "Software Engineer",
+            "start": "2018-07",
+            "end": "2022-03",
+            "url": "https://riverbank.example.com",
+            "bullets": [
+              {
+                "id": "claim-riverbank-ingestion",
+                "text": "Built a TypeScript and PostgreSQL ingestion service processing 2.4 million partner records per day, with idempotent retries and per-source quality reports for operations staff.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-riverbank-latency",
+                "text": "Profiled and redesigned the largest customer search queries, cutting p95 response latency from 820 ms to 290 ms without removing filters or reducing result accuracy.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-riverbank-migration",
+                "text": "Coordinated a zero-downtime migration of 640 GB of event data, documenting rollback conditions and validating representative records with the analytics team before cutover.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "entry-cedar",
+            "name": "Cedar Works",
+            "title": "Associate Software Developer",
+            "start": "2015-06",
+            "end": "2018-06",
+            "bullets": [
+              {
+                "id": "claim-cedar-tools",
+                "text": "Maintained internal build tools and shared libraries used by 35 developers, improving error messages and adding documentation for the most common local setup failures.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-cedar-support",
+                "text": "Worked with support and product colleagues to reproduce customer defects, write regression tests, and ship small, reviewable fixes on a weekly release schedule.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "entry-cloud-canopy",
+            "name": "Cloud Canopy Labs",
+            "title": "Software Engineer",
+            "start": "2013-06",
+            "end": "2015-05",
+            "bullets": [
+              {
+                "id": "claim-cloud-queue",
+                "text": "Implemented a queue-backed report generation service with bounded concurrency and explicit retry limits, reducing staff wait time while keeping customer-facing API requests responsive during end-of-quarter workloads.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-cloud-resume",
+                "text": "Collaborated with product operations to make scheduled exports resumable after process restarts, recording each job's state transitions and protecting completed reports from duplicate delivery.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-cloud-coverage",
+                "text": "Added integration coverage for malformed input, interrupted workers, and oversized attachments, then wrote an on-call guide with safe retry and recovery steps.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "projects",
+        "items": [
+          {
+            "id": "entry-observatory",
+            "name": "Observatory — Service Health Explorer",
+            "title": "Open-source maintainer",
+            "start": "2021-02",
+            "end": null,
+            "url": "https://github.com/morgan-example/observatory",
+            "bullets": [
+              {
+                "id": "claim-observatory",
+                "text": "Created a small open-source dashboard that joins traces, deploy metadata, and ownership records so on-call engineers can move from a service alert to its recent change history.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-observatory-docs",
+                "text": "Published setup guides and sample data that let contributors run the project without access to production systems or private customer information.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "entry-trailhead",
+            "name": "Trailhead — Deployment Readiness Toolkit",
+            "title": "Creator",
+            "start": "2019-03",
+            "end": "2020-02",
+            "bullets": [
+              {
+                "id": "claim-trailhead-checks",
+                "text": "Developed a local readiness check that inspects build metadata, service ownership, and staged deployment configuration before an approval request, with clear output for engineers and reviewers.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-trailhead-rules",
+                "text": "Kept validation rules deterministic and inspectable, separating advisory warnings from blocking conditions so teams could address release risks without hiding deployment failures.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-trailhead-docs",
+                "text": "Published synthetic example configurations and recovery notes that let contributors exercise the tool offline without credentials or access to production systems.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "education",
+        "items": [
+          {
+            "id": "entry-state-university",
+            "name": "Oregon State University",
+            "title": "B.S. Computer Science",
+            "start": "2011-09",
+            "end": "2015-06",
+            "bullets": []
+          }
+        ]
+      },
+      {
+        "kind": "certifications",
+        "items": [
+          {
+            "id": "entry-secure-dev",
+            "name": "Secure Software Development",
+            "issuer": "Example Professional Institute",
+            "start": "2023-02",
+            "end": "2026-02",
+            "bullets": []
+          }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-typescript", "label": "TypeScript", "evidenceIds": ["fact-platform"] },
+      { "id": "skill-node", "label": "Node.js", "evidenceIds": ["fact-platform"] },
+      { "id": "skill-postgres", "label": "PostgreSQL", "evidenceIds": ["fact-platform"] },
+      { "id": "skill-platform", "label": "Developer platforms", "evidenceIds": ["fact-platform"] },
+      { "id": "skill-aws", "label": "AWS", "evidenceIds": ["fact-platform"] },
+      { "id": "skill-observability", "label": "OpenTelemetry", "evidenceIds": ["fact-platform"] }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "fact-platform",
+      "entryId": "entry-northstar",
+      "text": "Synthetic source note: Morgan led platform and reliability work. Metrics in this example are fictional and exist only to exercise resume export layout.",
+      "source": { "kind": "user_statement", "locator": "Synthetic example only" },
+      "confirmedByUser": true
+    }
+  ]
+}

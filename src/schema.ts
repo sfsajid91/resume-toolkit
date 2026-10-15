@@ -163,12 +163,12 @@ const findingSchema = z.discriminatedUnion("criterion", [
   z.strictObject({
     criterion: z.literal("relevance"),
     ...findingCommon,
-    answer: z.number().int().min(0).max(2),
+    answer: z.number().min(0).max(2),
   }),
   z.strictObject({
     criterion: z.literal("clarity"),
     ...findingCommon,
-    answer: z.number().int().min(0).max(2),
+    answer: z.number().min(0).max(2),
   }),
 ]);
 

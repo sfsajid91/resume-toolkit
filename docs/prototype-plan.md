@@ -1,6 +1,6 @@
 # Resume Toolkit — Concrete Prototype Plan
 
-Status: Phase 1 (contracts and validation) implemented and verified; Phase 2 (local exports) is next. Local Phase 0 PDF/DOCX smoke checks passed; manual DOCX edit/save/reopen and an authorized live Jev call remain open.
+Status: Phase 3 local implementation and mock-service verification complete. The authorized live Jev answer/model/usage and cancellation gate remains open.
 
 This is the build specification for the prototype. It refines [agent-tool-direction.md](agent-tool-direction.md) and supersedes conflicting contracts in [research-synthesis.md](research-synthesis.md). Planning documents live in `docs/`; the project layout and current verification state are recorded below.
 
@@ -48,10 +48,10 @@ The connected agent reads an existing resume using its own PDF/vision/extraction
 | Validation/contracts | Zod 4; generated JSON Schema | One authoritative schema definition, strict keys |
 | PDF | Local Typst CLI + trusted template + local fonts | No Chromium, remote packages, or agent-generated Typst code |
 | DOCX | `docx` package with native paragraphs, styles, lists, and links | No screenshots, text boxes, or hand-written OOXML engine |
-| Evaluation | Official `@typesafe-ai/sdk` | Load only for live evaluation; Bun import/instantiation smoke-tested, but a live call and cancellation remain unverified |
-| Checks | `bun:test`, TypeScript checker, actual CLI/export runs | No API calls in routine tests |
+| Evaluation | Official `@typesafe-ai/sdk` | Load only for live evaluation; one batch with an overall AbortSignal deadline; live call and cancellation remain unverified |
+| Checks | `bun:test`, TypeScript checker, actual CLI/export runs | No external API calls in routine tests; evaluation failure cases use a loopback mock |
 
-Environment versions observed: Bun 1.4.2 and Typst 0.15.1. `package.json`/`bun.lock` exact-pin `docx` 9.10.0, `@typesafe-ai/sdk` 0.6.0, Zod 4.6.7, TypeScript 7.0.2, and `@types/bun` 1.4.3. Typst is installed outside the repository; the renderer must verify its version. Local export smoke tests passed; the full Phase 0 gate remains open for a saved/reopened Writer edit and an explicitly authorized live Jev call. If the SDK fails during an authorized Bun request, use one documented HTTP client path; do not ship two clients. A renderer change requires updating this plan, not silently substituting a browser.
+Environment versions observed: Bun 1.4.2 and Typst 0.15.1. `package.json`/`bun.lock` exact-pin `docx` 9.10.0, `@typesafe-ai/sdk` 0.6.0, Zod 4.6.7, TypeScript 7.0.2, and `@types/bun` 1.4.3. Typst is installed outside the repository; the renderer must verify its version. Local export smoke tests and the LibreOffice Writer edit/save/reopen check passed; Phase 0 remains open only for an explicitly authorized live Jev call and cancellation check. If the SDK fails during an authorized Bun request, use one documented HTTP client path; do not ship two clients. A renderer change requires updating this plan, not silently substituting a browser.
 
 A DOCX renderer is a required second output serializer, not a second PDF backend.
 
@@ -240,7 +240,7 @@ Refuse input/output aliasing, including symlink aliases. Stage writes on the des
 
 A plain resolved resume model removes job/evidence metadata and retains selected content in original order. Both serializers consume it. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
 
-Initial design: single column; black text; conventional headings; 11 pt body; 18 pt name; 12 pt section headings; 18 mm margins; Carlito (SIL Open Font License 1.1). The single-page Typst smoke PDF embedded Carlito subsets; glyph coverage, bundling/license notice, and DOCX font substitution remain to be verified. No photo, icons, skill bars, content tables, floating shapes, or automatic font shrinking. Support honest multipage output.
+Initial design: single column; black text; conventional headings; 11 pt body; 18 pt name; 12 pt section headings; 18 mm margins; Carlito (SIL Open Font License 1.1), with local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) as glyph fallbacks. The isolated Typst compile uses only bundled fonts and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX refers to Carlito; recipient font substitution remains environment-dependent. No photo, icons, skill bars, content tables, floating shapes, or automatic font shrinking. Support honest multipage output.
 
 PDF and DOCX must preserve the same wording, section order, links, and visual hierarchy. Exact line wrapping and page-count parity are not acceptance requirements: Word processors and Typst have different layout engines.
 
@@ -356,13 +356,13 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 
 ### Immediate next three steps
 
-Phase 0 remains open for the manual DOCX edit/save/reopen check and an authorized live Jev request/cancellation check. Neither blocks Phase 2 local export work.
+Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete.
 
 1. **Completed — Phase 1: contracts and validation.** Implemented strict Zod application/report schemas, generated JSON Schema, one-time input snapshots/hashes, locatable issues, `schema`/`validate` CLI behavior, the synthetic fixture, and focused Bun tests. **Gate:** `bunx tsc --noEmit` and `bun test` pass; subprocess checks exercise exit codes 0, 1, 2, and 4, evidence warnings, and unchanged fixture bytes.
 
-2. **Next — Phase 2: local exports.** Resolve one ordered resume model and fixed design; implement Typst PDF and native DOCX serializers, template/font assets, safe single-file output, and A4/Letter support. **Gate:** satisfy the Phase 2 row above: compact/dense/edge content and links survive, PDF pages are visually inspected, rendering works offline, and a user edits a generated DOCX bullet in Writer, saves, and reopens it with list formatting intact.
+2. **Completed — Phase 2: local exports.** Implemented the ordered resolved model and fixed design, trusted JSON Typst template, native editable DOCX, local licensed fonts, staged safe writes, CLI `render`, A4/Letter, and compact/dense/edge examples. **Gate:** final CLI tests rendered all three fixtures in both formats; `pdftotext`/`pdfinfo` confirmed selectable content, paper sizes, two-page dense layout, and link annotations; PDF pages were visually inspected; Writer save/reopen retained native bullet style and numbering; rendering stayed offline.
 
-3. **Then — Phase 3: Jev evaluation.** Add minimized projection, exact offline `--dry-run`, explicit consent, one SDK batch, cancellation deadline, answer validation, and reports. **Gate:** complete an authorized synthetic live call with observed model/usage/findings plus controlled invalid-answer/auth/timeout cases. Explicit user authorization is required for every live request; configured credentials alone are not consent.
+3. **Implemented — Phase 3 local evaluation.** Added the minimized projection, exact offline `--dry-run`, explicit remote consent, one SDK batch using Choice/Noul/Score, a 30-second overall AbortSignal deadline, strict answer validation, and versioned reports. **Local gate:** `bun x tsc --noEmit`, all 29 tests, loopback mock failures, and the actual no-key dry-run CLI path passed. **Remaining live gate:** an explicitly authorized synthetic Jev call with observed model/usage/findings and cancellation; it was not completed.
 
 Do not wait for broad evaluator calibration to use local exports. The complete prototype still requires a real authorized Jev run; fake responses are only controlled failure fixtures, not feature proof.
 
@@ -389,24 +389,25 @@ Use a few realistic support examples plus mutations of magnitude/ownership and m
 
 ## 11. Prerequisites and current verification
 
-The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 adds `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. The TypeScript and Bun test gates pass.
+The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 added `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. Phase 2 added the shared resolved resume/design, staged writes, both local serializers, Typst template and licensed font assets, export fixtures, `render`, and focused tests. Phase 3 added `src/evaluate.ts`, the `evaluate` CLI mode, and loopback-backed evaluation tests.
 
 ### Observed local smoke checks
 
 - Bun 1.4.2 and Typst 0.15.1 ran on the development Linux x86_64 environment. Typst was installed to `~/.local/bin/typst` from the official `typst-x86_64-unknown-linux-musl` v0.15.1 release; the archive SHA-256 was verified.
-- Carlito is locally available under the SIL Open Font License 1.1. A fixed Typst template loaded JSON data, generated a one-page A4 PDF, and passed text, embedded-font, link-annotation, and visual inspection.
-- `docx` 9.10.0 generated a real DOCX under Bun. LibreOffice Writer 26.2.6.3 opened and converted it; the same synthetic wording, order, bullets, and external link were observed. A manual bullet edit/save/reopen is still unverified.
-- `@typesafe-ai/sdk` 0.6.0 imported and instantiated under Bun. No Jev request was sent; live answer/model/usage and cancellation remain unverified until explicitly authorized.
+- Carlito, Droid Sans Fallback Full, and Noto Emoji are bundled with their OFL/Apache notices. Typst 0.15.1 renders A4 and Letter PDFs with system font discovery disabled; `pdffonts` confirmed embedded subsets, while `pdftotext`, `pdfinfo`, and URL annotation inspection confirmed selectable text, page metadata, and working links. Visual review covered compact A4, dense two-page A4, and Unicode Letter output.
+- `docx` 9.10.0 generated real DOCX files with native paragraph styles, list numbering, and external links. LibreOffice Writer 26.2.6.3 opened a generated file; a Writer/UNO edit-save-reopen round-trip retained an added `Resume Bullet` paragraph at numbering level 0. LibreOffice is verification-only, not a runtime dependency.
+- `@typesafe-ai/sdk` 0.6.0 is available under Bun. The final evaluation tests used only a local mock service; no successful live Jev result or cancellation has been observed.
 - The repository dependency smoke test imported `docx`, Zod, and `@typesafe-ai/sdk`, instantiated the SDK client without making a request, and parsed a small strict Zod value.
+- Phase 3 local gate: `bun x tsc --noEmit` passed; `bun test` passed (29 tests across seven files); the actual `evaluate --dry-run --json` CLI returned `status: "dry_run"` with no API key or network access.
 
-These are disposable feasibility experiments, not product CLI acceptance. Phase 0 is not fully complete. The outstanding Writer and live Jev checks remain open: manual DOCX editing is a Phase 2 check, and live Jev remains a Phase 3 check. Neither blocks local Phase 2 work.
+These are local product CLI checks, not the remaining Phase 0/3 live-evaluation gate. An authorized synthetic Jev request, live response/model/usage, and cancellation remain open. No findings or usage are fabricated.
 
 ## 12. Documentation sources checked for planning
 
 - [Typst installation and CLI](https://github.com/typst/typst#installation): native compiler and local compilation.
 - [Typst JSON loading](https://typst.app/docs/reference/data-loading/json/): structured data input, separate from executable template source.
-- [`docx` usage](https://github.com/dolanmiu/docx/tree/master/docs/usage): paragraphs, styles, lists, hyperlinks, and document packing. Bun generation and LibreOffice open/convert are smoke-tested; manual edit/save/reopen remains unverified.
-- [TypeSafe JavaScript SDK](https://docs.typesafe.ai/sdk/javascript.md): SDK/API entry point and Node 20+ requirement. Bun import/instantiation is smoke-tested; live call and cancellation remain unverified.
+- [`docx` usage](https://github.com/dolanmiu/docx/tree/master/docs/usage): paragraphs, styles, lists, hyperlinks, and document packing. Bun generation and LibreOffice open/edit/save/reopen were exercised; LibreOffice is verification-only, not a runtime dependency.
+- [TypeSafe JavaScript SDK](https://docs.typesafe.ai/sdk/javascript.md): client, typed primitives, custom fetch transport, retry policy, and AbortSignal support. The pinned SDK was exercised through a local mock service; a live Jev call and cancellation remain unverified.
 - [Bun TypeScript configuration](https://bun.com/docs/runtime/typescript): Bun TypeScript, compiler options, and `@types/bun`.
 - [TypeSafe primitives](https://docs.typesafe.ai/primitives.md): Choice/Score/Noul answer shapes and uncertainty semantics.
 

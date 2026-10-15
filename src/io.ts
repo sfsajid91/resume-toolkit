@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, realpath, stat } from "node:fs/promises";
+import { link, lstat, mkdtemp, readFile, realpath, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 
 export const MAX_INPUT_BYTES = 2_097_152;
@@ -81,5 +81,25 @@ export async function pathsAlias(firstPath: string, secondPath: string): Promise
   } catch (error: unknown) {
     if (isMissingPath(error)) return false;
     throw error;
+  }
+}
+
+export async function writeStagedOutput(
+  outputPath: string,
+  force: boolean,
+  generate: (stagedPath: string) => Promise<void>,
+): Promise<void> {
+  const targetPath = resolve(outputPath);
+  const stagingDirectory = await mkdtemp(resolve(dirname(targetPath), `.resume-toolkit-${basename(targetPath)}-`));
+  try {
+    const stagedPath = resolve(stagingDirectory, basename(targetPath));
+    await generate(stagedPath);
+    if (!(await lstat(stagedPath)).isFile()) {
+      throw new Error("Output generator did not produce a regular file.");
+    }
+    if (force) await rename(stagedPath, targetPath);
+    else await link(stagedPath, targetPath);
+  } finally {
+    await rm(stagingDirectory, { recursive: true, force: true });
   }
 }

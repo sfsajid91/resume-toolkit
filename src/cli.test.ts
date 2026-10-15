@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { readFile, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -101,6 +101,88 @@ describe("CLI subprocess behavior", () => {
       await rm(directory, { recursive: true, force: true });
     }
   }, 15_000);
+
+  test("rejects render flag and extension mismatches as usage errors", () => {
+    const wrongExtension = runCli([
+      "render", "--input", fixturePath, "--format", "docx", "--out", "resume.pdf", "--json",
+    ]);
+    const wrongCommand = runCli(["validate", "--input", fixturePath, "--format", "docx", "--json"]);
+    expect(wrongExtension.exitCode).toBe(2);
+    expect(wrongCommand.exitCode).toBe(2);
+    expect(parseObject(wrongExtension.stdout).error).toEqual(expect.objectContaining({ code: "usage_error" }));
+  });
+
+  test("renders through available exporters and protects outputs", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "resume-toolkit-render-cli-"));
+    try {
+      const fixtures = ["application.json", "dense-application.json", "edge-application.json"] as const;
+      const formats: readonly ("pdf" | "docx")[] = Bun.which("typst") === null ? ["docx"] : ["pdf", "docx"];
+      for (const [index, name] of fixtures.entries()) {
+        const input = join(projectRoot, "examples", name);
+        const bytes = await readFile(input);
+        for (const format of formats) {
+          const output = join(directory, `${index}.${format}`);
+          const result = runCli([
+            "render", "--input", input, "--format", format, "--out", output,
+            ...(index === 2 ? ["--paper", "letter"] : []), "--json",
+          ]);
+          expect(result.exitCode).toBe(0);
+          expect(result.stderr).toBe("");
+          expect(result.stdout.trim().split("\n")).toHaveLength(1);
+          const rendered = parseObject(result.stdout);
+          expect(rendered).toEqual(expect.objectContaining({
+            status: "rendered",
+            outputPath: output,
+            format,
+            inputHash: `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
+          }));
+          expect(typeof rendered.toolVersion).toBe("string");
+          expect(Array.isArray(rendered.warnings)).toBe(true);
+          const artifact = await readFile(output);
+          expect(artifact.subarray(0, 4).toString()).toBe(format === "pdf" ? "%PDF" : "PK\u0003\u0004");
+        }
+      }
+
+      const protectedOutput = join(directory, "protected.docx");
+      await writeFile(protectedOutput, "previous output");
+      const refused = runCli([
+        "render", "--input", fixturePath, "--format", "docx", "--out", protectedOutput, "--json",
+      ]);
+      expect(refused.exitCode).toBe(4);
+      expect(await readFile(protectedOutput, "utf8")).toBe("previous output");
+
+      const forced = runCli([
+        "render", "--input", fixturePath, "--format", "docx", "--out", protectedOutput, "--force", "--json",
+      ]);
+      expect(forced.exitCode).toBe(0);
+
+      const invalidInput = join(directory, "invalid.json");
+      const invalidOutput = join(directory, "invalid.docx");
+      await writeFile(invalidInput, JSON.stringify({ schemaVersion: 99 }));
+      const invalid = runCli([
+        "render", "--input", invalidInput, "--format", "docx", "--out", invalidOutput, "--json",
+      ]);
+      expect(invalid.exitCode).toBe(1);
+      await expect(readFile(invalidOutput)).rejects.toMatchObject({ code: "ENOENT" });
+
+      const writeFailure = runCli([
+        "render", "--input", fixturePath, "--format", "docx",
+        "--out", join(directory, "missing-parent", "resume.docx"), "--json",
+      ]);
+      expect(writeFailure.exitCode).toBe(4);
+
+      const originalInput = await readFile(fixturePath);
+      const aliasPath = join(directory, "input-alias.docx");
+      await symlink(fixturePath, aliasPath);
+      const alias = runCli([
+        "render", "--input", fixturePath, "--format", "docx", "--out", aliasPath, "--json",
+      ]);
+      expect(alias.exitCode).toBe(4);
+      expect(await readFile(fixturePath)).toEqual(originalInput);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 45_000);
 
   test("emits schema and help as single JSON objects and rejects conflicting flags", () => {
     const schema = runCli(["schema", "--kind", "report", "--json"]);
