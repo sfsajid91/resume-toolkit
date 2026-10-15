@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-`resume-toolkit` is a local Bun/TypeScript CLI for validating agent-supplied resume data, optionally evaluating it with Jev, and exporting PDF/DOCX. The connected AI agent owns career context, tailoring, and revisions; the toolkit does not own a profile database or application workflow. The agent skill remains planned.
+`resume-toolkit` is a local Bun/TypeScript CLI for validating agent-supplied resume data, optionally evaluating it with Jev, and exporting PDF/DOCX. The connected AI agent owns career context, tailoring, and revisions; the toolkit does not own a profile database or application workflow. The agent skill lives in `skills/resume-toolkit/SKILL.md`.
 
-**Current state:** Phases 1–3 local implementation are present, including source, tests, export assets, fixtures, and the `schema`, `validate`, `evaluate`, and `render` commands. The evaluation dry-run and local mock failure cases are verified; an explicitly authorized live Jev answer/model/usage and cancellation check remain open. Phase 4 (agent skill/workflow) is next.
+**Current state:** Phases 1–4 local implementation are present, including source, tests, export assets, fixtures, the `schema`, `validate`, `evaluate`, and `render` commands, and the agent skill. The evaluation dry-run, local mock failure cases, and synthetic revision-to-export workflow are verified; an explicitly authorized live Jev answer/model/usage and cancellation check remain open. The workflow test simulates review findings rather than claiming live evaluation.
 
 ## Architecture & Data Flow
 
@@ -29,7 +29,7 @@ Use one versioned `Application` snapshot as input. Strict Zod schemas define its
 - `docs/` — product boundaries, contracts, implementation phases, and research.
 - `src/` — implemented CLI, schemas, validation/I/O, resolved resume/design, PDF/DOCX serializers, and evaluation.
 - `assets/` — trusted Typst template and licensed local fonts.
-- Planned `skills/resume-toolkit/` — agent instructions.
+- `skills/resume-toolkit/` — agent instructions for evidence-linked snapshots, consent, bounded revisions, and export/manual-edit boundaries.
 - `examples/` — synthetic application fixtures only.
 
 ## Development Commands

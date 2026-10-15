@@ -1,6 +1,6 @@
 # Resume Toolkit — Concrete Prototype Plan
 
-Status: Phase 3 local implementation and mock-service verification complete. The authorized live Jev answer/model/usage and cancellation gate remains open.
+Status: Phases 1–4 local implementation and offline/simulated workflow verification complete. The authorized live Jev answer/model/usage and cancellation gate remains open.
 
 This is the build specification for the prototype. It refines [agent-tool-direction.md](agent-tool-direction.md) and supersedes conflicting contracts in [research-synthesis.md](research-synthesis.md). Planning documents live in `docs/`; the project layout and current verification state are recorded below.
 
@@ -354,7 +354,7 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 | **4 — agent workflow** | Skill setup, contracts, ingestion responsibility, bounded revisions and human-review guidance. Exercise one installed shell-capable agent. | Agent produces snapshot, fixes validation, obtains remote consent, revises a claim after findings, exports both formats, and explains manual-edit/report boundaries. Name the tested environment; no universal-agent claim. |
 | **5 — prototype delivery** | Fresh-install instructions, privacy/service terms disclosure, licenses, actual export examples and observed verification notes. | Another documented fresh workspace reaches both exports; observed limitations recorded; no claimed compatibility/usefulness benchmark without evidence. |
 
-### Immediate next three steps
+### Implementation progress
 
 Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete.
 
@@ -363,6 +363,8 @@ Phase 0 remains open only for an authorized live Jev request/cancellation check.
 2. **Completed — Phase 2: local exports.** Implemented the ordered resolved model and fixed design, trusted JSON Typst template, native editable DOCX, local licensed fonts, staged safe writes, CLI `render`, A4/Letter, and compact/dense/edge examples. **Gate:** final CLI tests rendered all three fixtures in both formats; `pdftotext`/`pdfinfo` confirmed selectable content, paper sizes, two-page dense layout, and link annotations; PDF pages were visually inspected; Writer save/reopen retained native bullet style and numbering; rendering stayed offline.
 
 3. **Implemented — Phase 3 local evaluation.** Added the minimized projection, exact offline `--dry-run`, explicit remote consent, one SDK batch using Choice/Noul/Score, a 30-second overall AbortSignal deadline, strict answer validation, and versioned reports. **Local gate:** `bun x tsc --noEmit`, all 29 tests, loopback mock failures, and the actual no-key dry-run CLI path passed. **Remaining live gate:** an explicitly authorized synthetic Jev call with observed model/usage/findings and cancellation; it was not completed.
+
+4. **Implemented — Phase 4 agent workflow and skill.** Added [`skills/resume-toolkit/SKILL.md`](../skills/resume-toolkit/SKILL.md) with schema discovery, ownership/provenance boundaries, exact command/exit-code reference, minimized-payload preview and explicit human consent, at most two automated revision passes, and manual DOCX reconciliation/report boundaries. `src/workflow.test.ts` exercises real CLI schema discovery, a structurally valid overstated v1, dry-run inspection, an explicitly simulated contradicted finding, an immutable-evidence v2 with a distinct byte hash, and both offline exports. It checks full corrected wording with `pdftotext`, DOCX archive integrity/native OOXML paragraphs/lists/styles, and unchanged snapshot bytes. **Local gate:** `bunx tsc --noEmit` and `bun test` pass (30 tests across eight files, zero failures). **Remaining live boundary:** this synthetic report does not satisfy the authorized Jev or real remote-consent exercise in the full prototype gate.
 
 Do not wait for broad evaluator calibration to use local exports. The complete prototype still requires a real authorized Jev run; fake responses are only controlled failure fixtures, not feature proof.
 
@@ -389,7 +391,7 @@ Use a few realistic support examples plus mutations of magnitude/ownership and m
 
 ## 11. Prerequisites and current verification
 
-The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 added `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. Phase 2 added the shared resolved resume/design, staged writes, both local serializers, Typst template and licensed font assets, export fixtures, `render`, and focused tests. Phase 3 added `src/evaluate.ts`, the `evaluate` CLI mode, and loopback-backed evaluation tests.
+The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 added `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. Phase 2 added the shared resolved resume/design, staged writes, both local serializers, Typst template and licensed font assets, export fixtures, `render`, and focused tests. Phase 3 added `src/evaluate.ts`, the `evaluate` CLI mode, and loopback-backed evaluation tests. Phase 4 added the agent skill and `src/workflow.test.ts` lifecycle regression.
 
 ### Observed local smoke checks
 
@@ -399,6 +401,7 @@ The initial project setup consists of a private Bun package, exact dependency pi
 - `@typesafe-ai/sdk` 0.6.0 is available under Bun. The final evaluation tests used only a local mock service; no successful live Jev result or cancellation has been observed.
 - The repository dependency smoke test imported `docx`, Zod, and `@typesafe-ai/sdk`, instantiated the SDK client without making a request, and parsed a small strict Zod value.
 - Phase 3 local gate: `bun x tsc --noEmit` passed; `bun test` passed (29 tests across seven files); the actual `evaluate --dry-run --json` CLI returned `status: "dry_run"` with no API key or network access.
+- Phase 4 local gate was exercised by the omp shell-capable coding agent on Linux x86_64 with Bun 1.4.2, Typst 0.15.1, Poppler `pdftotext` 26.01.0, and UnZip 6.00. The workflow test requires both export tools rather than silently skipping PDF verification. Its renders run with an empty `TYPESAFE_API_KEY` and preloaded network-denial guards. A separate actual CLI smoke run also produced distinct v1/v2 hashes, preserved v1 bytes, and extracted the corrected claim from both exports with no remote evaluation. Skill YAML frontmatter parsed successfully. These checks do not establish compatibility with other agent environments or repeat the earlier desktop Writer/visual checks.
 
 These are local product CLI checks, not the remaining Phase 0/3 live-evaluation gate. An authorized synthetic Jev request, live response/model/usage, and cancellation remain open. No findings or usage are fabricated.
 
