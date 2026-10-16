@@ -100,6 +100,34 @@ install_skill_copy() {
   done
 }
 
+ensure_claude_skill_link() {
+  local source="$1"
+  local destination="$2"
+  local current
+  local entry
+  mkdir -p -- "$(dirname -- "$destination")"
+  if [[ -L "$destination" ]]; then
+    current="$(readlink -f -- "$destination" 2>/dev/null || true)"
+    if [[ "$current" == "$source" ]]; then
+      return
+    fi
+    [[ -n "$current" && "$(basename -- "$current")" == resume-toolkit && -f "$current/SKILL.md" ]] \
+      || fail "$destination is a symlink to an unrelated target; refusing to replace it."
+    rm -- "$destination"
+  elif [[ -d "$destination" ]]; then
+    for entry in "$destination"/* "$destination"/.[!.]* "$destination"/..?*; do
+      [[ -e "$entry" || -L "$entry" ]] || continue
+      [[ -f "$entry" && ! -L "$entry" && -f "$source/${entry##*/}" ]] \
+        || fail "$destination contains extra files; move them before converting it to a symlink."
+      rm -- "$entry"
+    done
+    rmdir -- "$destination"
+  elif [[ -e "$destination" ]]; then
+    fail "$destination exists and is not a skill directory."
+  fi
+  ln -s -- "../../.agents/skills/resume-toolkit" "$destination"
+}
+
 mkdir -p -- "$LOCAL_BIN"
 (
   cd -- "$TOOLKIT_ROOT"
@@ -107,8 +135,9 @@ mkdir -p -- "$LOCAL_BIN"
   bun link
 )
 ensure_symlink "$TOOLKIT_ROOT/src/cli.ts" "$LOCAL_BIN/resume-toolkit"
+install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$HOME_DIR/.agents/skills/resume-toolkit"
 install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$HOME_DIR/.omp/skills/resume-toolkit"
-install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$HOME_DIR/.claude/skills/resume-toolkit"
+ensure_claude_skill_link "$HOME_DIR/.agents/skills/resume-toolkit" "$HOME_DIR/.claude/skills/resume-toolkit"
 
 printf 'Checking installed CLI outside the repository...\n'
 (
@@ -130,10 +159,12 @@ if [[ -n "$WORKSPACE_PATH" ]]; then
   mkdir -p -- \
     "$WORKSPACE_PATH/career-vault" \
     "$WORKSPACE_PATH/jobs" \
+    "$WORKSPACE_PATH/.agents/skills" \
     "$WORKSPACE_PATH/.omp/skills" \
     "$WORKSPACE_PATH/.claude/skills"
+  install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$WORKSPACE_PATH/.agents/skills/resume-toolkit"
   install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$WORKSPACE_PATH/.omp/skills/resume-toolkit"
-  install_skill_copy "$TOOLKIT_ROOT/skills/resume-toolkit" "$WORKSPACE_PATH/.claude/skills/resume-toolkit"
+  ensure_claude_skill_link "$WORKSPACE_PATH/.agents/skills/resume-toolkit" "$WORKSPACE_PATH/.claude/skills/resume-toolkit"
 
   create_file_if_missing "$WORKSPACE_PATH/.gitignore" <<'EOF'
 # Keep personal career data and generated exports out of source control.
