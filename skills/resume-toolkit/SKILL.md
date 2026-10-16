@@ -43,8 +43,10 @@ Exit codes: **0** success (including semantic review findings); **1** invalid in
 
 ## Safe workflow
 
-1. Gather the target job description and confirmed career facts. Prepare a strict version-1 application JSON snapshot using `schema --kind application --json` as the schema reference. Keep only relevant evidence. Validate it:
-   Use `schemaVersion: 1`, a stable application `id`, and a positive integer `revision`. Keep IDs unique, dates factual, and entry-bullet evidence references within that entry. Evaluation needs evidence references on every claim/skill and a job with at least one quoted requirement; local rendering does not require evidence or a job.
+1. **Read the writing guide before drafting.** Load and read [`writing-guide.md`](writing-guide.md) in this skill directory before generating or revising any `resume.summary` claim or entry `bullets`. Apply it on every revision.
+   Gather the target job description and confirmed career facts. Prepare a strict version-1 application JSON snapshot using `schema --kind application --json` as the schema reference. Keep only relevant evidence.
+   Before saving a new or revised snapshot, and again before any `validate` or `evaluate` command, run a case-insensitive self-audit of generated summary and bullet text against the guide's complete banned-vocabulary list, including obvious word variants and dangling fluff tails. Rewrite every hit in plain, evidence-backed language; do not change source evidence or factual proper names to make the audit pass.
+   Use `schemaVersion: 1`, a stable application `id`, and a positive integer `revision`. Keep IDs unique, dates factual, and entry-bullet evidence references within that entry. Evaluation needs evidence references on every claim/skill and a job with at least one quoted requirement; local rendering does not require evidence or a job. Run local validation:
    ```sh
    bun run src/cli.ts validate --input application.v1.json --json
    ```
