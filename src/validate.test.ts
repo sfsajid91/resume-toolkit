@@ -266,6 +266,21 @@ describe("application contract and validation", () => {
     expect(unconfirmedResult.issues).toContainEqual(expect.objectContaining({ code: "evidence.unconfirmed", severity: "warning" }));
   });
 
+  test("accepts optional headline and skill categories but rejects blank values", () => {
+    const withOptionalFields = fixture();
+    withOptionalFields.resume.basics.headline = "Senior Engineer";
+    withOptionalFields.resume.skills[0]!.category = "Languages";
+    expect(applicationSchema.safeParse(withOptionalFields).success).toBe(true);
+
+    const blankHeadline = fixture();
+    blankHeadline.resume.basics.headline = " ";
+    expect(applicationSchema.safeParse(blankHeadline).success).toBe(false);
+
+    const blankCategory = fixture();
+    blankCategory.resume.skills[0]!.category = " ";
+    expect(applicationSchema.safeParse(blankCategory).success).toBe(false);
+  });
+
   test("detects missing resume content and exposes schema generation", () => {
     const application = fixture();
     application.resume.sections = [];
@@ -278,6 +293,8 @@ describe("application contract and validation", () => {
     const generated = JSON.stringify(generateJsonSchema("application"));
     expect(generated).toContain('"additionalProperties":false');
     expect(generated).toContain('"maxLength":4000');
+    expect(generated).toContain('"headline"');
+    expect(generated).toContain('"category"');
   });
 });
 

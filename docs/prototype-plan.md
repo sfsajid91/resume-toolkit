@@ -78,6 +78,7 @@ type Claim = {
 type Resume = {
   basics: {
     name: string;
+    headline?: string;
     email?: string;
     phone?: string;
     location?: string;
@@ -85,9 +86,8 @@ type Resume = {
   };
   summary: Claim[];
   sections: Section[];
-  skills: { id: string; label: string; evidenceIds: string[] }[];
+  skills: { id: string; label: string; category?: string; evidenceIds: string[] }[];
 };
-
 type Section = {
   kind: "experience" | "projects" | "education" | "certifications";
   items: Entry[];
@@ -136,7 +136,7 @@ These outlines are design contracts, not a second manually maintained schema. Im
 
 - All objects reject unknown fields and unsupported schema versions. Revisions are positive integers. Reject whitespace-only required strings without rewriting inputs.
 - All claim IDs are unique across summary and bullets. Entry, skill, evidence, and requirement IDs are unique in their respective namespaces; duplicate selections/references are errors.
-- Section kinds are unique; preserve input section and item order. Headings come from a fixed map: Experience, Projects, Education, Certifications, plus Summary and Skills.
+- Section kinds are unique; preserve input section and item order. Headings come from a fixed map: Professional Experience, Selected Projects, Education, Certifications, plus Professional Summary and Technical Skills.
 - Experience requires title/start; education requires title; certification requires issuer. At least one entry or skill must exist. Empty summary and credential bullets are allowed.
 - Validate calendar months and chronological order. Do not invent dates or silently normalize them.
 - Web URLs allow `https:`/`http:` only; validate email separately. Reject unsafe schemes/control characters. Links are never fetched.
@@ -240,7 +240,15 @@ Refuse input/output aliasing, including symlink aliases. Stage writes on the des
 
 A plain resolved resume model removes job/evidence metadata and retains selected content in original order. Both serializers consume it. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
 
-Initial design: single column; black text; conventional headings; 11 pt body; 18 pt name; 12 pt section headings; 18 mm margins; Carlito (SIL Open Font License 1.1), with local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) as glyph fallbacks. The isolated Typst compile uses only bundled fonts and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX refers to Carlito; recipient font substitution remains environment-dependent. No photo, icons, skill bars, content tables, floating shapes, or automatic font shrinking. Support honest multipage output.
+Current design (version 2.0.0): single column, Carlito (Calibri-metric-compatible; SIL Open Font License 1.1), primary `#000000` and secondary `#222222`, 15 mm top/bottom and 16 mm left/right margins. Body is 10 pt with 1.15 line spacing (`0.55em` Typst leading; `276` twips DOCX line spacing). No automatic font shrinking; support honest multipage output.
+
+The centered header uses a 20 pt bold uppercase name (2 pt after), optional 11 pt regular headline (3 pt after), 9.5 pt location/phone/email joined by ` | `, then 9.5 pt links joined by ` | `. Link display text omits `https://` while href targets stay unchanged. The header block ends with 8 pt spacing.
+
+Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 11 pt bold uppercase, full-width 0.6 pt black bottom rule, 9 pt before/4 pt after, and kept with following content.
+
+Experience and education put the 10.5 pt bold role/title and 10 pt regular date range on one line, with the date flush right; Typst uses a two-column grid and DOCX one native right-aligned tab stop and one tab. The 10 pt italic company/institution follows on its own line with 3 pt after. Projects put a 10.5 pt bold name and optional URL/date on the first line, then optional 9.5 pt italic subtitle/tech stack with 3 pt after. Valid `YYYY-MM` inputs display as abbreviated month/year, joined with an en dash; source snapshots remain unchanged.
+
+Summary is 10 pt with 3 pt after. Bullets are 10 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have 6 pt separation. Skills render as bold `Skills:` plus a comma-separated list when categories are absent, or as bold category labels in first-appearance order. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst uses only bundled fonts and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX refers to Carlito; recipient font substitution remains environment-dependent. No photo, icons, skill bars, content tables, or floating shapes.
 
 PDF and DOCX must preserve the same wording, section order, links, and visual hierarchy. Exact line wrapping and page-count parity are not acceptance requirements: Word processors and Typst have different layout engines.
 
@@ -396,12 +404,12 @@ The initial project setup consists of a private Bun package, exact dependency pi
 ### Observed local smoke checks
 
 - Bun 1.4.2 and Typst 0.15.1 ran on the development Linux x86_64 environment. Typst was installed to `~/.local/bin/typst` from the official `typst-x86_64-unknown-linux-musl` v0.15.1 release; the archive SHA-256 was verified.
-- Carlito, Droid Sans Fallback Full, and Noto Emoji are bundled with their OFL/Apache notices. Typst 0.15.1 renders A4 and Letter PDFs with system font discovery disabled; `pdffonts` confirmed embedded subsets, while `pdftotext`, `pdfinfo`, and URL annotation inspection confirmed selectable text, page metadata, and working links. Visual review covered compact A4, dense two-page A4, and Unicode Letter output.
-- `docx` 9.10.0 generated real DOCX files with native paragraph styles, list numbering, and external links. LibreOffice Writer 26.2.6.3 opened a generated file; a Writer/UNO edit-save-reopen round-trip retained an added `Resume Bullet` paragraph at numbering level 0. LibreOffice is verification-only, not a runtime dependency.
+- Carlito, Droid Sans Fallback Full, and Noto Emoji are bundled with their OFL/Apache notices. Design 2.0 rendered both application fixtures as A4 and Letter PDFs with system font discovery disabled. `pdfinfo` confirmed page sizes/counts: compact is one page at both sizes; dense is one A4 page and two Letter pages, with only the skills section on Letter page two. `pdftotext` confirmed selectable content; `pdfinfo -url` confirmed full HTTPS targets; `pdffonts` confirmed embedded Carlito subsets. Page-image review checked centered headers, uppercase ruled sections, right-aligned dates, and the dense page boundary.
+- `docx` 9.10.0 rendered both fixtures at A4 and Letter. OOXML inspection verified 15/16 mm margins, centered header styles, 276-twip line spacing, section rules, right-tab positions at the printable widths (10092 A4 / 10426 Letter), and exactly one native tab run per date row with no tab characters in text runs. LibreOffice Writer edited, saved, and reopened a v2.0 dense A4 DOCX; the `Resume Bullet` style and numbering level 0 remained intact. LibreOffice is verification-only, not a runtime dependency.
 - `@typesafe-ai/sdk` 0.6.0 is available under Bun. The final evaluation tests used only a local mock service; no successful live Jev result or cancellation has been observed.
 - The repository dependency smoke test imported `docx`, Zod, and `@typesafe-ai/sdk`, instantiated the SDK client without making a request, and parsed a small strict Zod value.
-- Phase 3 local gate: `bun x tsc --noEmit` passed; `bun test` passed (29 tests across seven files); the actual `evaluate --dry-run --json` CLI returned `status: "dry_run"` with no API key or network access.
-- Phase 4 local gate was exercised by the omp shell-capable coding agent on Linux x86_64 with Bun 1.4.2, Typst 0.15.1, Poppler `pdftotext` 26.01.0, and UnZip 6.00. The workflow test requires both export tools rather than silently skipping PDF verification. Its renders run with an empty `TYPESAFE_API_KEY` and preloaded network-denial guards. A separate actual CLI smoke run also produced distinct v1/v2 hashes, preserved v1 bytes, and extracted the corrected claim from both exports with no remote evaluation. Skill YAML frontmatter parsed successfully. These checks do not establish compatibility with other agent environments or repeat the earlier desktop Writer/visual checks.
+- Current local gate: `bunx tsc --noEmit` passed; `bun test` passed (35 tests across eight files); the actual `evaluate --dry-run --json` CLI returned `status: "dry_run"` with no API key or network access.
+- Phase 4 local gate was exercised by the omp shell-capable coding agent on Linux x86_64 with Bun 1.4.2, Typst 0.15.1, Poppler `pdftotext` 26.01.0, and UnZip 6.00. The workflow test requires both export tools rather than silently skipping PDF verification. Its renders run with an empty `TYPESAFE_API_KEY` and preloaded network-denial guards. A separate actual CLI smoke run also produced distinct v1/v2 hashes, preserved v1 bytes, and extracted the corrected claim from both exports with no remote evaluation. Skill YAML frontmatter parsed successfully. These checks do not establish compatibility with other agent environments.
 
 These are local product CLI checks, not the remaining Phase 0/3 live-evaluation gate. An authorized synthetic Jev request, live response/model/usage, and cancellation remain open. No findings or usage are fabricated.
 

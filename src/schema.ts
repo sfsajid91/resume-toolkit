@@ -64,6 +64,7 @@ const applicationShapeSchema = z.strictObject({
   resume: z.strictObject({
     basics: z.strictObject({
       name: nonBlankString,
+      headline: nonBlankString.optional(),
       email: nonBlankString.optional(),
       phone: nonBlankString.optional(),
       location: nonBlankString.optional(),
@@ -74,6 +75,7 @@ const applicationShapeSchema = z.strictObject({
     skills: z.array(z.strictObject({
       id: idSchema,
       label: nonBlankString,
+      category: nonBlankString.optional(),
       evidenceIds: z.array(idSchema),
     })).max(100),
   }),

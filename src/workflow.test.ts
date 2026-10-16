@@ -198,7 +198,7 @@ describe("synthetic agent workflow through the CLI", () => {
       expect((await readFile(pdfPath)).subarray(0, 4).toString()).toBe("%PDF");
       expect((await readFile(docxPath)).subarray(0, 4).toString()).toBe("PK\u0003\u0004");
       const pdfText = await command("pdftotext", [pdfPath, "-"]);
-      expect(pdfText).toContain("Alex Example");
+      expect(pdfText.replace(/\s+/gu, " ")).toContain("ALEX EXAMPLE");
       expect(pdfText.replace(/\s+/gu, " ")).toContain(revisedClaim.text);
       expect(pdfText).not.toContain("Led the team-wide");
       expect(pdfText).not.toContain("50% reduction");
@@ -209,7 +209,7 @@ describe("synthetic agent workflow through the CLI", () => {
         command("unzip", ["-p", docxPath, "word/numbering.xml"]),
       ]);
       const visibleText = xmlText(documentXml).join(" ");
-      expect(visibleText).toContain("Alex Example");
+      expect(visibleText).toContain("ALEX EXAMPLE");
       expect(visibleText).toContain(revisedClaim.text);
       expect(visibleText).not.toContain("Led the team-wide");
       expect(visibleText).not.toContain("50% reduction");

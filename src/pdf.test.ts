@@ -46,15 +46,17 @@ describe("PDF export", () => {
         expect(text.trim().length).toBeGreaterThan(0);
         expect(info.toLowerCase()).toContain(item.paper === "a4" ? "(a4)" : "(letter)");
         if (item.fixture === "application.json") {
-          expect(text).toContain("Alex Example");
+          expect(text.replace(/\s+/gu, " ")).toContain("ALEX EXAMPLE");
+          expect(text).toContain("PROFESSIONAL EXPERIENCE");
           expect(text).toContain("Implemented TypeScript API caching");
         } else if (item.fixture === "dense-application.json") {
-          expect(text).toContain("Morgan Example");
+          expect(text.replace(/\s+/gu, " ")).toContain("MORGAN EXAMPLE");
+          expect(text).toContain("PROFESSIONAL SUMMARY");
           expect(text).toContain("OpenTelemetry");
-          expect(Number(info.match(/Pages:\s+(\d+)/)?.[1] ?? 0)).toBeGreaterThan(1);
+          expect(Number(info.match(/Pages:\s+(\d+)/)?.[1] ?? 0)).toBe(1);
           expect(urls).toContain("https://morgan.example.net");
         } else {
-          expect(text).toContain("Renée");
+          expect(text).toContain("RENÉE");
           expect(text).toContain("Café & Co.");
           expect(text).toContain("李");
           expect(text).toContain("東京");
@@ -79,9 +81,32 @@ describe("PDF export", () => {
         ...compact,
         basics: { ...compact.basics, name: "Forced replacement" },
       }, { outputPath: existingPath, paper: "a4", force: true });
-      expect(await command("pdftotext", [existingPath, "-"])).toContain("Forced replacement");
+      expect((await command("pdftotext", [existingPath, "-"])).replace(/\s+/gu, " ")).toContain("Forced replacement");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   });
+  test.skipIf(!inspectionToolsAvailable)("renders optional headline and category-grouped skills", async () => {
+    const base = await fixture("application.json");
+    const resume = {
+      ...base,
+      basics: { ...base.basics, headline: "Full-Stack Engineer" },
+      skills: [
+        { category: "Languages", labels: ["TypeScript", "Bun"] },
+        { category: "Frontend", labels: ["React"] },
+      ],
+    };
+    const directory = await mkdtemp(join(tmpdir(), "resume-pdf-options-test-"));
+    const outputPath = join(directory, "resume.pdf");
+    try {
+      await exportPdf(resume, { outputPath, paper: "letter", force: false });
+      const text = await command("pdftotext", [outputPath, "-"]);
+      expect(text).toContain("Full-Stack Engineer");
+      expect(text.replace(/\s+/gu, " ")).toContain("Languages: TypeScript, Bun");
+      expect(text.replace(/\s+/gu, " ")).toContain("Frontend: React");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
 });

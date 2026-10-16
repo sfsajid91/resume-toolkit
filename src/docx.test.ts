@@ -41,15 +41,18 @@ describe("editable DOCX export", () => {
       const numbering = await zipPart(output, "word/numbering.xml");
       const relationships = await zipPart(output, "word/_rels/document.xml.rels");
       const visible = xmlText(body);
+      const tabbedParagraphs = [...body.matchAll(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/gu)]
+        .map(([xml]) => xml ?? "")
+        .filter((xml) => /<w:tab\s/u.test(xml));
       expect(visible[0]).toBe(resume.basics.name);
-      expect(visible).toContain("Summary");
-      expect(visible).toContain("Experience");
-      expect(visible).toContain("Projects");
-      expect(visible).toContain("Education");
-      expect(visible).toContain("Certifications");
-      expect(visible).toContain("Skills");
-      expect(visible.indexOf("Experience")).toBeLessThan(visible.indexOf("Projects"));
-      expect(visible.indexOf("Projects")).toBeLessThan(visible.indexOf("Education"));
+      expect(visible).toContain("PROFESSIONAL SUMMARY");
+      expect(visible).toContain("PROFESSIONAL EXPERIENCE");
+      expect(visible).toContain("SELECTED PROJECTS");
+      expect(visible).toContain("EDUCATION");
+      expect(visible).toContain("CERTIFICATIONS");
+      expect(visible.join("")).toContain("Skills: TypeScript");
+      expect(visible.indexOf("PROFESSIONAL EXPERIENCE")).toBeLessThan(visible.indexOf("SELECTED PROJECTS"));
+      expect(visible.indexOf("SELECTED PROJECTS")).toBeLessThan(visible.indexOf("EDUCATION"));
       const firstBullet = resume.sections[0]?.entries[0]?.bullets[0];
       if (firstBullet === undefined) throw new Error("Dense fixture is missing its first bullet.");
       expect(visible).toContain(firstBullet);
@@ -63,11 +66,43 @@ describe("editable DOCX export", () => {
         expect(styles).toContain(`w:styleId="${style}"`);
       }
       expect(body).toContain("<w:keepNext");
-      expect(relationships).toContain("https://morgan.example.net");
-      expect(body).toContain("<w:hyperlink");
+      expect(styles).toContain('<w:jc w:val="center"/>');
+      expect(styles).toContain('w:line="276"');
+      expect(body).toContain("<w:pBdr>");
+      expect(body).toContain('w:sz="5"');
+      expect(body).toContain('<w:tab w:val="right" w:pos="10092"/>');
+      expect(tabbedParagraphs.length).toBeGreaterThan(0);
+      expect(tabbedParagraphs.every((value) =>
+        (value.match(/<w:tab\/>/gu) ?? []).length === 1 && (value.match(/<w:tab\s[^>]*\/>/gu) ?? []).length === 1,
+      )).toBe(true);
       expect(body).toContain('w:w="11906"');
       expect(body).toContain('w:h="16838"');
-      expect(body).toContain('w:top="1020"');
+      expect(body).toContain('w:top="850"');
+      expect(body).toContain('w:right="907"');
+      expect(body).toContain('w:left="907"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  test("renders optional headline and category-grouped skills", async () => {
+    const base = await fixture("../examples/application.json");
+    const resume: ResolvedResume = {
+      ...base,
+      basics: { ...base.basics, headline: "Full-Stack Engineer" },
+      skills: [
+        { category: "Languages", labels: ["TypeScript", "Bun"] },
+        { category: "Frontend", labels: ["React"] },
+      ],
+    };
+    const directory = await temporaryDirectory();
+    const output = join(directory, "resume.docx");
+    try {
+      await exportDocx(resume, { outputPath: output, paper: "a4", force: false });
+      const visible = xmlText(await zipPart(output, "word/document.xml")).join("");
+      expect(visible).toContain("Full-Stack Engineer");
+      expect(visible).toContain("Languages: TypeScript, Bun");
+      expect(visible).toContain("Frontend: React");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
