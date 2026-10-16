@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
-import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { extname, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
+import { installLatestRelease } from "../scripts/release.ts";
 import { exportDocx } from "./docx.ts";
 import { DESIGN_VERSION, type PaperSize } from "./design.ts";
 import { evaluatePrepared, prepareEvaluation, type EvaluationTransportOptions } from "./evaluate.ts";
@@ -363,17 +363,24 @@ async function runRender(values: ParsedArguments["values"]): Promise<number> {
 }
 
 async function runUpdate(json: boolean): Promise<number> {
-  const setupScript = join(import.meta.dir, "../scripts/setup.sh");
-  const exitCode = await new Promise<number>((resolve) => {
-    const child = spawn("bash", [setupScript, process.cwd()], {
-      stdio: json ? ["ignore", "ignore", "inherit"] : "inherit",
+  const home = process.env.HOME;
+  if (home === undefined) return ioError(json, "HOME must be set to update the toolkit.");
+  const installationRoot = process.env.RESUME_TOOLKIT_DIR ?? join(home, ".local", "share", "resume-toolkit");
+  const sourceRoot = resolve(import.meta.dir, "..");
+  const workspace = relative(sourceRoot, process.cwd());
+  const outsideSource = workspace === ".." || workspace.startsWith(`..${sep}`);
+  try {
+    const result = await installLatestRelease({
+      root: installationRoot,
+      ...(process.env.RESUME_TOOLKIT_RELEASE_URL ? { releaseUrl: process.env.RESUME_TOOLKIT_RELEASE_URL } : {}),
+      ...(outsideSource ? { workspace: process.cwd() } : {}),
     });
-    child.once("error", () => resolve(-1));
-    child.once("close", (code) => resolve(code ?? -1));
-  });
-  if (exitCode !== 0) return ioError(json, "Toolkit update failed; see setup diagnostics.");
-  if (json) writeOutput({ status: "updated", workspace: process.cwd() }, true);
-  return 0;
+    if (json) writeOutput({ status: "updated", version: result.version, installation: installationRoot }, true);
+    else process.stdout.write(`Updated resume-toolkit to ${result.version}.\n`);
+    return 0;
+  } catch {
+    return ioError(json, "Toolkit update failed; the previous installation was preserved.");
+  }
 }
 
 

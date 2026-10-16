@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPOSITORY='https://github.com/sfsajid91/resume-toolkit.git'
+OWNER='sfsajid91'
+REPOSITORY='resume-toolkit'
 HOME_DIR="${HOME:?HOME must be set}"
+RELEASE_URL="https://github.com/$OWNER/$REPOSITORY/releases/latest/download"
 LOCAL_BIN="$HOME_DIR/.local/bin"
 TOOLKIT_DIR="$HOME_DIR/.local/share/resume-toolkit"
 BUN_INSTALL="${BUN_INSTALL:-$HOME_DIR/.bun}"
@@ -17,7 +19,7 @@ if [[ $# -gt 1 ]]; then
 fi
 WORKSPACE_PATH="${1:-}"
 
-for dependency in curl git tar install mktemp uname sha256sum; do
+for dependency in curl tar install mktemp uname sha256sum; do
   command -v "$dependency" >/dev/null 2>&1 || fail "$dependency is required."
 done
 [[ "$(uname -s)" == Linux ]] || fail 'automatic installation currently supports Linux only.'
@@ -74,30 +76,12 @@ elif ! command -v typst >/dev/null 2>&1 || ! is_typst_0151 "$(command -v typst)"
   install_typst
 fi
 
-mkdir -p -- "$(dirname -- "$TOOLKIT_DIR")"
-if [[ -e "$TOOLKIT_DIR" || -L "$TOOLKIT_DIR" ]]; then
-  git -C "$TOOLKIT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "$TOOLKIT_DIR exists but is not a Git checkout."
-  origin="$(git -C "$TOOLKIT_DIR" remote get-url origin 2>/dev/null || true)"
-  case "$origin" in
-    "$REPOSITORY"|https://github.com/sfsajid91/resume-toolkit|git@github.com:sfsajid91/resume-toolkit.git|ssh://git@github.com/sfsajid91/resume-toolkit.git)
-      ;;
-    *)
-      fail "$TOOLKIT_DIR has an unexpected origin; refusing to update it."
-      ;;
-  esac
-  branch="$(git -C "$TOOLKIT_DIR" branch --show-current)"
-  [[ "$branch" == main ]] || fail "switch $TOOLKIT_DIR to main before updating."
-  [[ -z "$(git -C "$TOOLKIT_DIR" status --porcelain)" ]] || fail "$TOOLKIT_DIR has local changes; commit or stash them before updating."
-  git -C "$TOOLKIT_DIR" pull --ff-only origin main
-else
-  git clone --branch main --depth 1 "$REPOSITORY" "$TOOLKIT_DIR"
-fi
-
+TEMP_DIR="${TEMP_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/resume-toolkit-install.XXXXXX")}"
+trap 'rm -rf -- "$TEMP_DIR"' EXIT
 export PATH="$BUN_INSTALL/bin:$LOCAL_BIN${PATH:+:$PATH}"
-if [[ -n "$WORKSPACE_PATH" ]]; then
-  "$TOOLKIT_DIR/scripts/setup.sh" "$WORKSPACE_PATH"
-else
-  "$TOOLKIT_DIR/scripts/setup.sh"
-fi
+curl -fsSL "$RELEASE_URL/release.ts" -o "$TEMP_DIR/release.ts"
+curl -fsSL "$RELEASE_URL/release.ts.sha256" -o "$TEMP_DIR/release.ts.sha256"
+(cd "$TEMP_DIR" && sha256sum --check --status release.ts.sha256) || fail 'release installer checksum did not match.'
+RESUME_TOOLKIT_DIR="$TOOLKIT_DIR" bun run "$TEMP_DIR/release.ts" "${WORKSPACE_PATH:+$WORKSPACE_PATH}"
 
-printf 'Installed toolkit checkout: %s\n' "$TOOLKIT_DIR"
+printf 'Installed toolkit release: %s\n' "$TOOLKIT_DIR"

@@ -16,7 +16,7 @@ The installer bootstraps Bun and Typst 0.15.1 when needed, installs the CLI, cop
 
 ## Updating
 
-Run the same installer command again to fast-forward a clean checkout and refresh setup. It refuses to update a checkout with local changes. `resume-toolkit update` only reapplies setup from the current checkout; it does not fetch new source. Typst stays pinned to 0.15.1.
+If installed with the earlier Git-based installer, rerun the public installer command above once; that old CLI's `update` command only reapplies setup and cannot fetch the new updater. After migration, `resume-toolkit update` downloads the latest GitHub Release archive and checksum, validates the package and required files, installs in a staging directory, and reapplies setup. It uses HTTPS and does not require Git. Replaced contents remain recoverable at `~/.local/share/resume-toolkit.backup-<old-version>` (or `.backup-unmanaged` for unmarked legacy installs); backups are never overwritten automatically. Typst stays pinned to 0.15.1.
 
 ## Use
 

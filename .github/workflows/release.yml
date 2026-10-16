@@ -1,0 +1,42 @@
+name: Publish release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - name: Verify tag and package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(bun -e 'console.log(JSON.parse(await Bun.file("package.json").text()).version)')"
+          test "$tag" = "$version"
+          bun install --frozen-lockfile
+          bunx tsc --noEmit
+          bun test
+      - name: Build versioned and latest-release assets
+        run: |
+          archive_name="resume-toolkit-${GITHUB_REF_NAME}.tar.gz"
+          archive="$RUNNER_TEMP/$archive_name"
+          tar --exclude='./.git' --exclude='./node_modules' --exclude='./graphify-out' -czf "$archive" .
+          cp "$archive" "$archive_name"
+          sha256sum "$archive_name" > "$archive_name.sha256"
+          cp scripts/release.ts release.ts
+          sha256sum release.ts > release.ts.sha256
+          cp "$archive_name" resume-toolkit.tar.gz
+          printf '%s  resume-toolkit.tar.gz\n' "$(sha256sum "$archive_name" | cut -d ' ' -f 1)" > resume-toolkit.tar.gz.sha256
+          echo "ASSETS=$archive_name $archive_name.sha256 resume-toolkit.tar.gz resume-toolkit.tar.gz.sha256 release.ts release.ts.sha256" >> "$GITHUB_ENV"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" $ASSETS --generate-notes
