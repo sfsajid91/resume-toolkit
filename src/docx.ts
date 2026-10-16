@@ -232,7 +232,7 @@ function createDocument(resume: ResolvedResume, paper: PaperSize): Document {
   const leftMarginTwips = Math.round(DESIGN.marginsMm.left * twipsPerMm);
   const rightMarginTwips = Math.round(DESIGN.marginsMm.right * twipsPerMm);
   const printableWidthTwips = Math.round(paperDimensions.widthMm * twipsPerMm) - leftMarginTwips - rightMarginTwips;
-  const lineSpacing = { line: DESIGN.docxLineSpacingTwips, lineRule: LineRuleType.AUTO };
+  const lineSpacing = { line: DESIGN.docxAutoLineSpacing240ths, lineRule: LineRuleType.AUTO };
   const spacing = (before: number, after: number) => ({
     before: pointsToTwips(before),
     after: pointsToTwips(after),
@@ -255,7 +255,7 @@ function createDocument(resume: ResolvedResume, paper: PaperSize): Document {
         { id: "ResumeEntryDetail", name: "Resume Entry Detail", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.entryDetailFontPt * 2, color: DESIGN.colors.secondary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
         { id: "ResumeProjectSubtitle", name: "Resume Project Subtitle", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.projectSubtitleFontPt * 2, italics: true, color: DESIGN.colors.secondary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
         { id: "ResumeBody", name: "Resume Body", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.bodyFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
-        { id: "ResumeBullet", name: "Resume Bullet", basedOn: "Normal", next: "ResumeBullet", run: { font: DESIGN.fontFamily, size: DESIGN.bodyFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.bulletAfterPt) } },
+        { id: "ResumeBullet", name: "Resume Bullet", basedOn: "Normal", next: "ResumeBullet", run: { font: DESIGN.fontFamily, size: DESIGN.bulletFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.bulletAfterPt) } },
         { id: "ResumeSkill", name: "Resume Skill", basedOn: "Normal", next: "ResumeSkill", run: { font: DESIGN.fontFamily, size: DESIGN.bodyFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.skillLineAfterPt) } },
       ],
     },

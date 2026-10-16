@@ -62,7 +62,7 @@ There are no `package.json` scripts, build command, linter, or formatter. Do not
 
 ## Runtime/Tooling Preferences
 
-Use Bun and `bun.lock`; Bun 1.4.2 is the version observed in the plan. Dependencies are pinned in `package.json`: Zod 4 for validation, `@typesafe-ai/sdk` for Jev, and `docx` for editable DOCX. PDF generation uses the external Typst CLI (0.15.1 observed) and bundled licensed Carlito fonts. This is browserless; do not reintroduce Playwright/Chromium from the older research proposal. Keep API keys and private application data out of version control (`.gitignore` excludes `.env*`).
+Use Bun and `bun.lock`; Bun 1.4.2 is the version observed in the plan. Dependencies are pinned in `package.json`: Zod 4 for validation, `@typesafe-ai/sdk` for Jev, and `docx` for editable DOCX. PDF generation uses the external Typst CLI (0.15.1 observed), bundled Apache-2.0 Caladea (metric-compatible with Cambria), and licensed fallback fonts. DOCX output declares Cambria; recipient viewers may substitute it. This is browserless; do not reintroduce Playwright/Chromium from the older research proposal. Keep API keys and private application data out of version control (`.gitignore` excludes `.env*`).
 
 ## Testing & QA
 

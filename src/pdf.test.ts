@@ -53,7 +53,32 @@ describe("PDF export", () => {
           expect(text.replace(/\s+/gu, " ")).toContain("MORGAN EXAMPLE");
           expect(text).toContain("PROFESSIONAL SUMMARY");
           expect(text).toContain("OpenTelemetry");
-          expect(Number(info.match(/Pages:\s+(\d+)/)?.[1] ?? 0)).toBe(1);
+          expect(Number(info.match(/Pages:\s+(\d+)/)?.[1] ?? 0)).toBe(2);
+          const layout = await command("pdftotext", ["-bbox-layout", outputPath, "-"]);
+          const lines = [...layout.matchAll(/<line\b([^>]*)>([\s\S]*?)<\/line>/gu)].map(([, attributes, content]) => ({
+            y: Number(attributes?.match(/\byMin="([0-9.]+)"/u)?.[1]),
+            text: [...(content ?? "").matchAll(/<word\b[^>]*>([\s\S]*?)<\/word>/gu)]
+              .map(([, word]) => word ?? "")
+              .join(" "),
+          }));
+          const nameY = lines.find(({ text: value }) => value === "MORGAN EXAMPLE")?.y;
+          const contactY = lines.find(({ text: value }) => value.startsWith("Portland, OR |"))?.y;
+          const linksY = lines.find(({ text: value }) => value === "Portfolio | GitHub")?.y;
+          const headingIndex = lines.findIndex(({ text: value }) => value === "PROFESSIONAL SUMMARY");
+          const firstBodyIndex = lines.findIndex(({ text: value }) => value.startsWith("Product-minded"));
+          const nextParagraphIndex = lines.findIndex(({ text: value }) => value.startsWith("Known for"));
+          const headingY = lines[headingIndex]?.y;
+          const firstBodyY = lines[firstBodyIndex]?.y;
+          const secondBodyY = lines[nextParagraphIndex - 1]?.y;
+          const nextParagraphY = lines[nextParagraphIndex]?.y;
+          if ([nameY, contactY, linksY, headingY, firstBodyY, secondBodyY, nextParagraphY].some((value) => value === undefined)) {
+            throw new Error("The dense PDF fixture is missing expected resume text rows.");
+          }
+          expect(contactY! - nameY!).toBeGreaterThanOrEqual(24);
+          expect(linksY! - contactY!).toBeGreaterThanOrEqual(10);
+          expect(firstBodyY! - headingY!).toBeGreaterThanOrEqual(20);
+          expect(secondBodyY! - firstBodyY!).toBeGreaterThanOrEqual(14);
+          expect(nextParagraphY! - secondBodyY!).toBeGreaterThanOrEqual(16);
           expect(urls).toContain("https://morgan.example.net");
         } else {
           expect(text).toContain("RENÉE");

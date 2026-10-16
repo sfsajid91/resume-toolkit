@@ -28,6 +28,12 @@ function xmlText(xml: string): string[] {
     (value ?? "").replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&apos;", "'"),
   );
 }
+function paragraphStyle(xml: string, styleId: string): string {
+  const match = [...xml.matchAll(/<w:style\b([^>]*)>[\s\S]*?<\/w:style>/gu)]
+    .find(([, attributes]) => attributes?.includes(`w:styleId="${styleId}"`));
+  return match?.[0] ?? "";
+}
+
 
 describe("editable DOCX export", () => {
   test("preserves ordered content, native editable paragraphs/lists, styles, links and paper setup", async () => {
@@ -65,21 +71,38 @@ describe("editable DOCX export", () => {
       for (const style of ["ResumeName", "ResumeContact", "ResumeSectionHeading", "ResumeEntryHeading", "ResumeBody", "ResumeBullet"]) {
         expect(styles).toContain(`w:styleId="${style}"`);
       }
+      const expectedFontSizes = {
+        ResumeName: 38,
+        ResumeHeadline: 24,
+        ResumeContact: 22,
+        ResumeSectionHeading: 24,
+        ResumeEntryHeading: 22,
+        ResumeEntryDetail: 22,
+        ResumeProjectSubtitle: 22,
+        ResumeBody: 22,
+        ResumeBullet: 21,
+        ResumeSkill: 22,
+      };
+      for (const [styleId, halfPoints] of Object.entries(expectedFontSizes)) {
+        const style = paragraphStyle(styles, styleId);
+        expect(style).toContain('w:ascii="Cambria"');
+        expect(style).toContain(`<w:sz w:val="${halfPoints}"/>`);
+      }
       expect(body).toContain("<w:keepNext");
       expect(styles).toContain('<w:jc w:val="center"/>');
       expect(styles).toContain('w:line="276"');
       expect(body).toContain("<w:pBdr>");
       expect(body).toContain('w:sz="5"');
-      expect(body).toContain('<w:tab w:val="right" w:pos="10092"/>');
+      expect(body).toContain('<w:tab w:val="right" w:pos="9866"/>');
       expect(tabbedParagraphs.length).toBeGreaterThan(0);
       expect(tabbedParagraphs.every((value) =>
         (value.match(/<w:tab\/>/gu) ?? []).length === 1 && (value.match(/<w:tab\s[^>]*\/>/gu) ?? []).length === 1,
       )).toBe(true);
       expect(body).toContain('w:w="11906"');
       expect(body).toContain('w:h="16838"');
-      expect(body).toContain('w:top="850"');
-      expect(body).toContain('w:right="907"');
-      expect(body).toContain('w:left="907"');
+      expect(body).toContain('w:top="1020"');
+      expect(body).toContain('w:right="1020"');
+      expect(body).toContain('w:left="1020"');
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
