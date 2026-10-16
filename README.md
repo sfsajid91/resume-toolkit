@@ -2,35 +2,21 @@
 
 A local Bun CLI for validating agent-supplied application snapshots, optionally evaluating them with Jev, and exporting PDF and editable DOCX resumes. The toolkit does not store or manage career history; the connected agent owns tailoring and revisions.
 
-## Setup
+## Install
 
-Install Bun and Typst 0.15.1, then run from the toolkit repository:
-
-```sh
-./scripts/setup.sh
-```
-
-The setup script installs locked dependencies, links `resume-toolkit` into `~/.local/bin`, links the agent skill into `~/.omp/skills` and `~/.claude/skills`, and checks the CLI from `/tmp`. Make sure `~/.local/bin` is on `PATH` in shells where you use the command.
-
-To also create a private working directory:
+On Linux, install the CLI and scaffold a workspace with:
 
 ```sh
-./scripts/setup.sh ~/work/my-applications
+curl -fsSL https://raw.githubusercontent.com/sfsajid91/resume-toolkit/main/scripts/install.sh | bash -s -- "$HOME/work/my-applications"
 ```
 
-This creates `career-vault/`, `jobs/`, local skill links under `.omp/skills/` and `.claude/skills/`, a no-clobber `.gitignore` and `.env.example`, and starter Markdown files in `career-vault/`. Existing files are preserved. Workspace paths inside the toolkit repository are refused. The generated `.gitignore` excludes career notes, job data, credentials, and rendered exports.
+The installer bootstraps Bun and Typst 0.15.1 when needed, installs the CLI and agent skill, and creates the workspace without overwriting existing files. Omit the workspace argument to install only the CLI and global skills. Ensure `~/.local/bin` is on `PATH`.
+
+**Agents:** read [INSTALL.md](INSTALL.md) before installing; install only when the user requests it. To inspect the remote script before execution, download it from the URL above and review it first.
 
 ## Updating
 
-Run from the workspace root:
-
-```sh
-resume-toolkit update
-```
-
-This reinstalls missing locked Bun dependencies, repairs the global and workspace skill links, verifies Typst 0.15.1, and reruns the CLI smoke checks. Skills, PDF template, fonts, and design settings are read from the linked toolkit checkout rather than copied into the workspace, so changes in that checkout are used by the next invocation or render.
-
-`update` does not fetch new toolkit source or install/upgrade Typst. Update the toolkit checkout separately; Typst remains pinned to 0.15.1.
+Run the same installer command again to fast-forward a clean checkout and refresh setup. It refuses to update a checkout with local changes. `resume-toolkit update` only reapplies setup from the current checkout; it does not fetch new source. Typst stays pinned to 0.15.1.
 
 ## Use
 
