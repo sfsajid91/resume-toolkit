@@ -16,6 +16,16 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
+      - name: Install Typst 0.15.1
+        run: |
+          target='x86_64-unknown-linux-musl'
+          checksum='a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c'
+          archive="typst-$target.tar.xz"
+          curl -fsSL --retry 3 "https://github.com/typst/typst/releases/download/v0.15.1/$archive" -o "/tmp/$archive"
+          printf '%s  /tmp/%s\n' "$checksum" "$archive" | sha256sum --check --status -
+          tar -xJf "/tmp/$archive" -C /tmp
+          sudo install -m 0755 "/tmp/typst-$target/typst" /usr/local/bin/typst
+          typst --version
       - name: Verify tag and package version
         run: |
           tag="${GITHUB_REF_NAME#v}"
