@@ -197,7 +197,7 @@ describe("CLI subprocess behavior", () => {
     const conflict = runCli(["--help", "--version", "--json"]);
     const version = runCli(["--version", "--json"]);
     expect(version.exitCode).toBe(0);
-    expect(parseObject(version.stdout).version).toBe("0.1.0");
+    expect(parseObject(version.stdout).version).toBe("0.1.1");
     expect(conflict.exitCode).toBe(2);
     expect(parseObject(conflict.stdout).error).toEqual(expect.objectContaining({ code: "usage_error" }));
   });
