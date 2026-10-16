@@ -10,7 +10,7 @@ On Linux, install the CLI and scaffold a workspace with:
 curl -fsSL https://raw.githubusercontent.com/sfsajid91/resume-toolkit/main/scripts/install.sh | bash -s -- "$HOME/work/my-applications"
 ```
 
-The installer bootstraps Bun and Typst 0.15.1 when needed, installs the CLI and agent skill, and creates the workspace without overwriting existing files. Omit the workspace argument to install only the CLI and global skills. Ensure `~/.local/bin` is on `PATH`.
+The installer bootstraps Bun and Typst 0.15.1 when needed, installs the CLI, copies the agent skill into `.omp/skills/resume-toolkit` and `.claude/skills/resume-toolkit`, and creates the workspace without overwriting unrelated files. Omit the workspace argument to install only the CLI and global skills. Ensure `~/.local/bin` is on `PATH`.
 
 **Agents:** read [INSTALL.md](INSTALL.md) before installing; install only when the user requests it. To inspect the remote script before execution, download it from the URL above and review it first.
 

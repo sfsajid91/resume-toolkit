@@ -23,10 +23,12 @@ The command executes a script downloaded from GitHub. Review the public [`script
 - Clones the public toolkit to `~/.local/share/resume-toolkit`. On repeat installs, it fast-forwards a clean `main` checkout; it refuses a dirty, divergent, wrong-origin, or non-`main` checkout.
 - Installs Bun with Bun's official installer if Bun is missing.
 - Installs Typst 0.15.1 to `~/.local/bin/typst` when no matching version is available. The Linux x86_64 and aarch64 archives are checksum-verified. It refuses to overwrite a different executable already at that path.
-- Runs the toolkit setup: installs locked dependencies, links `resume-toolkit` into `~/.local/bin`, links the skill into `~/.omp/skills` and `~/.claude/skills`, and runs CLI smoke checks.
-- With a workspace argument, creates `career-vault/`, `jobs/`, local skill links, `.gitignore`, `.env.example`, and starter notes. Existing files are preserved, and workspace paths inside the toolkit checkout are refused.
+- Runs the toolkit setup: installs locked dependencies, links `resume-toolkit` into `~/.local/bin`, copies the skill files into `~/.omp/skills/resume-toolkit` and `~/.claude/skills/resume-toolkit`, and runs CLI smoke checks.
+- With a workspace argument, creates `career-vault/`, `jobs/`, skill copies under `.omp/skills/resume-toolkit` and `.claude/skills/resume-toolkit`, `.gitignore`, `.env.example`, and starter notes. Existing career notes and config files are preserved; setup refreshes toolkit-owned skill files on rerun and keeps extra files in those directories. Workspace paths inside the toolkit checkout are refused.
 
-No `sudo` or GitHub CLI is used. The installer requires Linux, Bash, `curl`, `git`, `tar`, `install`, `mktemp`, `sha256sum`, and GNU coreutils (`realpath`, `readlink`, `mkdir`). `unzip` is needed if Bun must be installed. Unsupported Linux architectures must install Typst 0.15.1 separately.
+Agent loaders need the skill as real files, not symlinks. `setup.sh` copies `skills/resume-toolkit/*` into each destination and refreshes those source-owned files on rerun while leaving extra files alone.
+
+No `sudo` or GitHub CLI is used. The installer requires Linux, Bash, `curl`, `git`, `tar`, `install`, `mktemp`, `sha256sum`, and GNU coreutils (`realpath`, `readlink`, `mkdir`, `cp`, `basename`). `unzip` is needed if Bun must be installed. Unsupported Linux architectures must install Typst 0.15.1 separately.
 
 Ensure `~/.local/bin` is on `PATH` in the user's shell. The workspace is separate from the toolkit checkout; never put personal career facts, job descriptions, API keys, or generated resumes in the toolkit repository.
 
