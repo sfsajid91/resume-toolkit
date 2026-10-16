@@ -63,22 +63,35 @@ describe("PDF export", () => {
           }));
           const nameY = lines.find(({ text: value }) => value === "MORGAN EXAMPLE")?.y;
           const contactY = lines.find(({ text: value }) => value.startsWith("Portland, OR |"))?.y;
-          const linksY = lines.find(({ text: value }) => value === "Portfolio | GitHub")?.y;
+          const linksY = lines.find(({ text: value }) => value === "morgan.example.net | github.com/morgan-example")?.y;
           const headingIndex = lines.findIndex(({ text: value }) => value === "PROFESSIONAL SUMMARY");
           const firstBodyIndex = lines.findIndex(({ text: value }) => value.startsWith("Product-minded"));
-          const nextParagraphIndex = lines.findIndex(({ text: value }) => value.startsWith("Known for"));
+          const experienceIndex = lines.findIndex(({ text: value }) => value === "PROFESSIONAL EXPERIENCE");
+          const skillsIndex = lines.findIndex(({ text: value }) => value === "TECHNICAL SKILLS");
+          const projectsIndex = lines.findIndex(({ text: value }) => value === "SELECTED PROJECTS");
           const headingY = lines[headingIndex]?.y;
           const firstBodyY = lines[firstBodyIndex]?.y;
-          const secondBodyY = lines[nextParagraphIndex - 1]?.y;
-          const nextParagraphY = lines[nextParagraphIndex]?.y;
-          if ([nameY, contactY, linksY, headingY, firstBodyY, secondBodyY, nextParagraphY].some((value) => value === undefined)) {
+          if ([nameY, contactY, linksY, headingY, firstBodyY].some((value) => value === undefined)) {
             throw new Error("The dense PDF fixture is missing expected resume text rows.");
           }
           expect(contactY! - nameY!).toBeGreaterThanOrEqual(24);
           expect(linksY! - contactY!).toBeGreaterThanOrEqual(10);
           expect(firstBodyY! - headingY!).toBeGreaterThanOrEqual(20);
-          expect(secondBodyY! - firstBodyY!).toBeGreaterThanOrEqual(14);
-          expect(nextParagraphY! - secondBodyY!).toBeGreaterThanOrEqual(16);
+          expect(experienceIndex).toBeGreaterThan(-1);
+          expect(experienceIndex).toBeLessThan(skillsIndex);
+          expect(skillsIndex).toBeLessThan(projectsIndex);
+          expect(text).toContain("Skills: TypeScript");
+          const summaryParagraph = text.split(/\n\s*\n/u)
+            .map((paragraph) => paragraph.replace(/\s+/gu, " "))
+            .find((paragraph) => paragraph.includes("Product-minded") && paragraph.includes("Known for connecting"));
+          expect(summaryParagraph).toContain("services. Known for connecting");
+          for (const heading of [
+            "PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS",
+            "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
+          ]) expect(lines.some(({ text: value }) => value === heading)).toBe(true);
+          expect(text).not.toContain("PROFESSIONAL EXPERIENCETECHNICAL SKILLS");
+          expect(text).not.toContain("TECHNICAL SKILLSSELECTED PROJECTS");
+          expect(text).not.toContain("Senior Software EngineerNorthstar Systems");
           expect(urls).toContain("https://morgan.example.net");
         } else {
           expect(text).toContain("RENÉE");
@@ -111,24 +124,39 @@ describe("PDF export", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  test.skipIf(!inspectionToolsAvailable)("renders optional headline and category-grouped skills", async () => {
-    const base = await fixture("application.json");
-    const resume = {
-      ...base,
-      basics: { ...base.basics, headline: "Full-Stack Engineer" },
-      skills: [
-        { category: "Languages", labels: ["TypeScript", "Bun"] },
-        { category: "Frontend", labels: ["React"] },
-      ],
-    };
+  test.skipIf(!inspectionToolsAvailable)("renders headline, clean URLs, grouped skills, and a cohesive summary", async () => {
+    const application = applicationSchema.parse(JSON.parse(
+      await readFile(new URL("../examples/application.json", import.meta.url), "utf8"),
+    ) as unknown);
+    application.resume.basics.headline = "Full-Stack Engineer";
+    application.resume.basics.links.push(
+      { label: "GitHub", url: "https://www.github.com/sfsajid91" },
+      { label: "github.com/sfsajid91/issues", url: "https://github.com/sfsajid91/issues" },
+    );
+    application.resume.summary = [
+      { id: "summary-api", text: "Built dependable APIs.", evidenceIds: [] },
+      { id: "summary-team", text: "Mentored a team.", evidenceIds: [] },
+    ];
+    application.resume.skills[0]!.category = "Languages";
+    application.resume.skills.push({ id: "skill-react", label: "React", category: "Frontend", evidenceIds: [] });
+    const resume = resolveResume(application);
     const directory = await mkdtemp(join(tmpdir(), "resume-pdf-options-test-"));
     const outputPath = join(directory, "resume.pdf");
     try {
       await exportPdf(resume, { outputPath, paper: "letter", force: false });
-      const text = await command("pdftotext", [outputPath, "-"]);
-      expect(text).toContain("Full-Stack Engineer");
-      expect(text.replace(/\s+/gu, " ")).toContain("Languages: TypeScript, Bun");
-      expect(text.replace(/\s+/gu, " ")).toContain("Frontend: React");
+      const [text, urls] = await Promise.all([
+        command("pdftotext", [outputPath, "-"]),
+        command("pdfinfo", ["-url", outputPath]),
+      ]);
+      const normalized = text.replace(/\s+/gu, " ");
+      expect(normalized).toContain("Full-Stack Engineer");
+      expect(normalized).toContain("github.com/sfsajid91 | github.com/sfsajid91/issues");
+      expect(urls).toContain("https://www.github.com/sfsajid91");
+      expect(urls).toContain("https://github.com/sfsajid91/issues");
+      expect(text.split(/\r?\n/u).map((line) => line.trim())).toContain("Built dependable APIs. Mentored a team.");
+      expect(normalized).toContain("Languages: TypeScript");
+      expect(normalized).toContain("Frontend: React");
+      expect(normalized.indexOf("PROFESSIONAL EXPERIENCE")).toBeLessThan(normalized.indexOf("TECHNICAL SKILLS"));
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

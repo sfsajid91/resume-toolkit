@@ -95,13 +95,21 @@
 
 #if resume.summary.len() > 0 [
   #section-heading("PROFESSIONAL SUMMARY")
-  #for paragraph in resume.summary [
-    #par(spacing: points(design.at("paragraph-after-pt")))[#paragraph]
-  ]
+  #par(spacing: points(design.at("paragraph-after-pt")))[#resume.summary.join(" ")]
 ]
 
+
 #for section in resume.sections [
-  #if section.entries.len() > 0 [
+  #if section.kind == "skills" [
+    #section-heading(section.title)
+    #for group in resume.skills [
+      #let label = if "category" in group { group.category } else { "Skills" }
+      #par(spacing: points(design.at("skill-line-after-pt")))[
+        #text(weight: "bold")[#label:] #group.labels.join(", ")
+      ]
+    ]
+  ] else if section.entries.len() > 0 [
+
     #section-heading(section.title)
     #for (entry-index, entry) in section.entries.enumerate() [
       #if entry-index > 0 [#v(points(design.at("entry-after-pt")))]
@@ -168,12 +176,3 @@
   ]
 ]
 
-#if resume.skills.len() > 0 [
-  #section-heading("TECHNICAL SKILLS")
-  #for group in resume.skills [
-    #let label = if "category" in group { group.category } else { "Skills" }
-    #par(spacing: points(design.at("skill-line-after-pt")))[
-      #text(weight: "bold")[#label:] #group.labels.join(", ")
-    ]
-  ]
-]

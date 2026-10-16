@@ -2,6 +2,25 @@ import type { Application } from "./schema.ts";
 
 export type ResumeSectionKind = Application["resume"]["sections"][number]["kind"];
 
+type ResolvedEntry = {
+  readonly name: string;
+  readonly title?: string;
+  readonly issuer?: string;
+  readonly dateRange: string;
+  readonly url?: string;
+  readonly urlDisplay?: string;
+  readonly bullets: readonly string[];
+};
+
+type ResolvedSkillGroup = {
+  readonly category?: string;
+  readonly labels: readonly string[];
+};
+
+type ResolvedSection =
+  | { readonly kind: ResumeSectionKind; readonly title: string; readonly entries: readonly ResolvedEntry[] }
+  | { readonly kind: "skills"; readonly title: "TECHNICAL SKILLS" };
+
 export type ResolvedResume = {
   readonly basics: {
     readonly name: string;
@@ -12,24 +31,13 @@ export type ResolvedResume = {
     readonly links: readonly { readonly label: string; readonly url: string }[];
   };
   readonly summary: readonly string[];
-  readonly sections: readonly {
-    readonly kind: ResumeSectionKind;
-    readonly title: string;
-    readonly entries: readonly {
-      readonly name: string;
-      readonly title?: string;
-      readonly issuer?: string;
-      readonly dateRange: string;
-      readonly url?: string;
-      readonly urlDisplay?: string;
-      readonly bullets: readonly string[];
-    }[];
-  }[];
-  readonly skills: readonly {
-    readonly category?: string;
-    readonly labels: readonly string[];
-  }[];
+  readonly sections: readonly ResolvedSection[];
+  readonly skills: readonly ResolvedSkillGroup[];
 };
+
+const GENERIC_LINK_LABELS = new Set(["github", "linkedin", "portfolio", "website"]);
+const URL_STYLE_LABEL = /^(?:https?:\/\/)?(?:www\.)?[^/?#\s]+(?:\/[^?#\s]*|[?#]\S*)$/iu;
+
 
 const SECTION_TITLES: Record<ResumeSectionKind, string> = {
   experience: "PROFESSIONAL EXPERIENCE",
@@ -49,10 +57,27 @@ function formatDate(value: string): string {
 }
 
 export function displayUrl(url: string): string {
-  return url.replace(/^https:\/\//iu, "");
+  return url.replace(/^https?:\/\//iu, "").replace(/^www\./iu, "");
 }
 
-function groupSkills(skills: Application["resume"]["skills"]): ResolvedResume["skills"] {
+function displayLinkLabel(label: string, url: string): string {
+  if (GENERIC_LINK_LABELS.has(label.trim().toLowerCase())) return displayUrl(url);
+  if (URL_STYLE_LABEL.test(label)) return label;
+
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./iu, "").toLowerCase();
+  } catch {
+    return label;
+  }
+  const labelDomain = label.trim()
+    .replace(/^(?:https?:\/\/)?(?:www\.)/iu, "")
+    .replace(/[/?#].*$/u, "")
+    .toLowerCase();
+  return hostname === labelDomain ? displayUrl(url) : label;
+}
+
+function groupSkills(skills: Application["resume"]["skills"]): ResolvedSkillGroup[] {
   const groups = new Map<string | undefined, string[]>();
   for (const skill of skills) {
     let labels = groups.get(skill.category);
@@ -70,6 +95,30 @@ function groupSkills(skills: Application["resume"]["skills"]): ResolvedResume["s
 
 export function resolveResume(application: Application): ResolvedResume {
   const { basics, summary, sections, skills } = application.resume;
+  const resolvedSections: ResolvedSection[] = sections.map(({ kind, items }) => ({
+    kind,
+    title: SECTION_TITLES[kind],
+    entries: items.map(({ name, title, issuer, start, end, url, bullets }) => ({
+      name,
+      ...(title === undefined ? {} : { title }),
+      ...(issuer === undefined ? {} : { issuer }),
+      dateRange: [
+        start === undefined ? undefined : formatDate(start),
+        end === null ? "Present" : end === undefined ? undefined : formatDate(end),
+      ].filter((value): value is string => value !== undefined).join(" – "),
+      ...(url === undefined ? {} : { url, urlDisplay: displayUrl(url) }),
+      bullets: bullets.map(({ text }) => text),
+    })),
+  }));
+  const skillGroups = groupSkills(skills);
+  if (skillGroups.length > 0) {
+    const experienceIndex = resolvedSections.findIndex(({ kind }) => kind === "experience");
+    resolvedSections.splice(experienceIndex < 0 ? 0 : experienceIndex + 1, 0, {
+      kind: "skills",
+      title: "TECHNICAL SKILLS",
+    });
+  }
+
   return {
     basics: {
       name: basics.name.toUpperCase(),
@@ -77,24 +126,10 @@ export function resolveResume(application: Application): ResolvedResume {
       ...(basics.email === undefined ? {} : { email: basics.email }),
       ...(basics.phone === undefined ? {} : { phone: basics.phone }),
       ...(basics.location === undefined ? {} : { location: basics.location }),
-      links: basics.links.map(({ label, url }) => ({ label: displayUrl(label), url })),
+      links: basics.links.map(({ label, url }) => ({ label: displayLinkLabel(label, url), url })),
     },
     summary: summary.map(({ text }) => text),
-    sections: sections.map(({ kind, items }) => ({
-      kind,
-      title: SECTION_TITLES[kind],
-      entries: items.map(({ name, title, issuer, start, end, url, bullets }) => ({
-        name,
-        ...(title === undefined ? {} : { title }),
-        ...(issuer === undefined ? {} : { issuer }),
-        dateRange: [
-          start === undefined ? undefined : formatDate(start),
-          end === null ? "Present" : end === undefined ? undefined : formatDate(end),
-        ].filter((value): value is string => value !== undefined).join(" – "),
-        ...(url === undefined ? {} : { url, urlDisplay: displayUrl(url) }),
-        bullets: bullets.map(({ text }) => text),
-      })),
-    })),
-    skills: groupSkills(skills),
+    sections: resolvedSections,
+    skills: skillGroups,
   };
 }

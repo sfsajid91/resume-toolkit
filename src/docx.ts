@@ -137,12 +137,21 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
 
   if (resume.summary.length > 0) {
     children.push(sectionHeading("PROFESSIONAL SUMMARY"));
-    for (const item of resume.summary) {
-      children.push(paragraph([text(item)], "ResumeBody"));
-    }
+    children.push(paragraph([text(resume.summary.join(" "))], "ResumeBody"));
   }
 
   for (const section of resume.sections) {
+    if (section.kind === "skills") {
+      children.push(sectionHeading(section.title));
+      for (const group of resume.skills) {
+        const label = group.category ?? "Skills";
+        children.push(paragraph([
+          text(`${label}: `, { bold: true, color: DESIGN.colors.primary }),
+          text(group.labels.join(", ")),
+        ], "ResumeSkill"));
+      }
+      continue;
+    }
     if (section.entries.length === 0) continue;
     children.push(sectionHeading(section.title));
     for (const [entryIndex, entry] of section.entries.entries()) {
@@ -214,16 +223,6 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
     }
   }
 
-  if (resume.skills.length > 0) {
-    children.push(sectionHeading("TECHNICAL SKILLS"));
-    for (const group of resume.skills) {
-      const label = group.category ?? "Skills";
-      children.push(paragraph([
-        text(`${label}: `, { bold: true, color: DESIGN.colors.primary }),
-        text(group.labels.join(", ")),
-      ], "ResumeSkill"));
-    }
-  }
   return children;
 }
 

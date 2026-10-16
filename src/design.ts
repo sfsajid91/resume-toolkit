@@ -1,6 +1,6 @@
 export type PaperSize = "a4" | "letter";
 
-export const DESIGN_VERSION = "2.2.0";
+export const DESIGN_VERSION = "2.3.0";
 export const DESIGN = {
   fontFamily: "Cambria",
   typstFontFamily: "Caladea",

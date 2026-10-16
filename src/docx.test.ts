@@ -28,6 +28,12 @@ function xmlText(xml: string): string[] {
     (value ?? "").replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&apos;", "'"),
   );
 }
+function paragraphTexts(xml: string): string[] {
+  return [...xml.matchAll(/<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/gu)].map(([, paragraph]) =>
+    xmlText((paragraph ?? "").replace(/<w:tab\b[^>]*\/>/gu, "<w:t> </w:t>")).join("").trim(),
+  );
+}
+
 function paragraphStyle(xml: string, styleId: string): string {
   const match = [...xml.matchAll(/<w:style\b([^>]*)>[\s\S]*?<\/w:style>/gu)]
     .find(([, attributes]) => attributes?.includes(`w:styleId="${styleId}"`));
@@ -47,20 +53,32 @@ describe("editable DOCX export", () => {
       const numbering = await zipPart(output, "word/numbering.xml");
       const relationships = await zipPart(output, "word/_rels/document.xml.rels");
       const visible = xmlText(body);
+      const paragraphs = paragraphTexts(body);
       const tabbedParagraphs = [...body.matchAll(/<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/gu)]
         .map(([xml]) => xml ?? "")
         .filter((xml) => /<w:tab\s/u.test(xml));
       expect(visible[0]).toBe(resume.basics.name);
-      expect(visible).toContain("PROFESSIONAL SUMMARY");
-      expect(visible).toContain("PROFESSIONAL EXPERIENCE");
-      expect(visible).toContain("SELECTED PROJECTS");
-      expect(visible).toContain("EDUCATION");
-      expect(visible).toContain("CERTIFICATIONS");
-      expect(visible.join("")).toContain("Skills: TypeScript");
-      expect(visible.indexOf("PROFESSIONAL EXPERIENCE")).toBeLessThan(visible.indexOf("SELECTED PROJECTS"));
-      expect(visible.indexOf("SELECTED PROJECTS")).toBeLessThan(visible.indexOf("EDUCATION"));
-      const firstBullet = resume.sections[0]?.entries[0]?.bullets[0];
+      const headings = [
+        "PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS",
+        "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
+      ];
+      for (const heading of headings) expect(paragraphs).toContain(heading);
+      expect(paragraphs.indexOf("PROFESSIONAL EXPERIENCE")).toBeLessThan(paragraphs.indexOf("TECHNICAL SKILLS"));
+      expect(paragraphs.indexOf("TECHNICAL SKILLS")).toBeLessThan(paragraphs.indexOf("SELECTED PROJECTS"));
+      expect(paragraphs.indexOf("SELECTED PROJECTS")).toBeLessThan(paragraphs.indexOf("EDUCATION"));
+      expect(paragraphs.join(" ")).toContain("Skills: TypeScript");
+      const summaryText = resume.summary.join(" ");
+      expect(paragraphs.filter((value) => value === summaryText)).toHaveLength(1);
+      expect(paragraphs).not.toContain("PROFESSIONAL EXPERIENCETECHNICAL SKILLS");
+      expect(paragraphs).toContain("morgan.example.net | github.com/morgan-example");
+      expect(relationships).toContain("https://morgan.example.net");
+      expect(relationships).toContain("https://github.com/morgan-example");
+      const experience = resume.sections.find((section) => section.kind === "experience");
+      if (experience === undefined || experience.kind === "skills") throw new Error("Dense fixture is missing experience.");
+      const firstBullet = experience.entries[0]?.bullets[0];
       if (firstBullet === undefined) throw new Error("Dense fixture is missing its first bullet.");
+      expect(paragraphs.some((value) => value.startsWith("Senior Software Engineer"))).toBe(true);
+      expect(paragraphs).not.toContain("Senior Software EngineerNorthstar Systems");
       expect(visible).toContain(firstBullet);
       expect((body.match(/<w:p(?:\s|>)/gu) ?? []).length).toBeGreaterThan(20);
       expect(body).toContain("<w:numPr>");
@@ -90,6 +108,7 @@ describe("editable DOCX export", () => {
       }
       expect(body).toContain("<w:keepNext");
       expect(styles).toContain('<w:jc w:val="center"/>');
+      expect(paragraphStyle(styles, "ResumeHeadline")).toContain('<w:jc w:val="center"/>');
       expect(styles).toContain('w:line="276"');
       expect(body).toContain("<w:pBdr>");
       expect(body).toContain('w:sz="5"');
@@ -108,11 +127,16 @@ describe("editable DOCX export", () => {
     }
   });
 
-  test("renders optional headline and category-grouped skills", async () => {
+  test("renders headline, URL labels, grouped skills, and one summary paragraph", async () => {
     const base = await fixture("../examples/application.json");
     const resume: ResolvedResume = {
       ...base,
-      basics: { ...base.basics, headline: "Full-Stack Engineer" },
+      basics: {
+        ...base.basics,
+        headline: "Full-Stack Engineer",
+        links: [{ label: "github.com/sfsajid91", url: "https://github.com/sfsajid91" }],
+      },
+      summary: ["Built dependable APIs.", "Mentored a team."],
       skills: [
         { category: "Languages", labels: ["TypeScript", "Bun"] },
         { category: "Frontend", labels: ["React"] },
@@ -122,10 +146,15 @@ describe("editable DOCX export", () => {
     const output = join(directory, "resume.docx");
     try {
       await exportDocx(resume, { outputPath: output, paper: "a4", force: false });
-      const visible = xmlText(await zipPart(output, "word/document.xml")).join("");
-      expect(visible).toContain("Full-Stack Engineer");
-      expect(visible).toContain("Languages: TypeScript, Bun");
-      expect(visible).toContain("Frontend: React");
+      const body = await zipPart(output, "word/document.xml");
+      const relationships = await zipPart(output, "word/_rels/document.xml.rels");
+      const paragraphs = paragraphTexts(body);
+      expect(paragraphs.indexOf("Full-Stack Engineer")).toBe(paragraphs.indexOf(base.basics.name) + 1);
+      expect(paragraphs).toContain("github.com/sfsajid91");
+      expect(relationships).toContain("https://github.com/sfsajid91");
+      expect(paragraphs.filter((value) => value === "Built dependable APIs. Mentored a team.")).toHaveLength(1);
+      expect(paragraphs).toContain("Languages: TypeScript, Bun");
+      expect(paragraphs).toContain("Frontend: React");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

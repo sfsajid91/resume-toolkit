@@ -16,15 +16,20 @@ describe("resolved resume", () => {
 
     expect(resolved.basics.name).toBe("MORGAN EXAMPLE");
     expect(resolved.sections.map(({ title }) => title)).toEqual([
-      "PROFESSIONAL EXPERIENCE", "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
+      "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS", "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
     ]);
-    expect(resolved.sections[0]?.entries[0]?.name).toBe("Northstar Systems");
-    expect(resolved.sections[0]?.entries[0]?.dateRange).toBe("Apr 2022 – Present");
+    const experience = resolved.sections.find((section) => section.kind === "experience");
+    if (experience === undefined || experience.kind === "skills") throw new Error("Dense fixture is missing experience.");
+    expect(experience.entries[0]?.name).toBe("Northstar Systems");
+    expect(experience.entries[0]?.dateRange).toBe("Apr 2022 – Present");
     expect(resolved.summary[0]).toBe(application.resume.summary[0]?.text);
-    expect(resolved.sections[0]?.entries[0]?.bullets[0]).toBe(
-      application.resume.sections[0]?.items[0]?.bullets[0]?.text,
-    );
-    expect(resolved.basics.links[0]?.url).toBe("https://morgan.example.net");
+    expect(experience.entries[0]?.bullets[0]).toBe(application.resume.sections[0]?.items[0]?.bullets[0]?.text);
+    expect(resolved.basics.links.map(({ label }) => label)).toEqual([
+      "morgan.example.net", "github.com/morgan-example",
+    ]);
+    expect(resolved.basics.links.map(({ url }) => url)).toEqual([
+      "https://morgan.example.net", "https://github.com/morgan-example",
+    ]);
     expect(resolved).not.toHaveProperty("evidence");
     expect(resolved).not.toHaveProperty("job");
     expect(JSON.stringify(application)).toBe(original);
@@ -38,10 +43,10 @@ describe("resolved resume", () => {
       { id: "skill-react", label: "React", category: "Frontend", evidenceIds: [] },
       { id: "skill-sql", label: "SQL", category: "Languages", evidenceIds: [] },
     );
-    application.resume.basics.links.push({
-      label: "https://example.com/profile",
-      url: "https://example.com/profile",
-    });
+    application.resume.basics.links.push(
+      { label: "github.com/sfsajid91", url: "https://github.com/sfsajid91" },
+      { label: "github.com", url: "https://www.github.com/sfsajid91" },
+    );
     const resolved = resolveResume(application);
 
     expect(resolved.basics.headline).toBe("Full-Stack Engineer");
@@ -51,9 +56,16 @@ describe("resolved resume", () => {
       { category: "Frontend", labels: ["React"] },
     ]);
     expect(resolved.basics.links[0]).toEqual({
-      label: "example.com/profile",
-      url: "https://example.com/profile",
+      label: "github.com/sfsajid91",
+      url: "https://github.com/sfsajid91",
     });
+    expect(resolved.basics.links[1]).toEqual({
+      label: "github.com/sfsajid91",
+      url: "https://www.github.com/sfsajid91",
+    });
+    expect(resolved.sections.findIndex(({ kind }) => kind === "skills")).toBe(
+      resolved.sections.findIndex(({ kind }) => kind === "experience") + 1,
+    );
   });
 
   test("keeps existing example fixtures compatible", async () => {
