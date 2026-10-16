@@ -1,8 +1,7 @@
 import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { delimiter, join } from "node:path";
 import type { ResolvedResume } from "./resume.ts";
 import { DESIGN, DESIGN_VERSION, type PaperSize } from "./design.ts";
 import { writeStagedOutput } from "./io.ts";
@@ -10,7 +9,7 @@ import { writeStagedOutput } from "./io.ts";
 const REQUIRED_TYPST_VERSION = "0.15.1";
 const COMPILATION_TIMEOUT_MS = 30_000;
 const VERSION_TIMEOUT_MS = 5_000;
-const ASSETS_DIR = fileURLToPath(new URL("../assets/", import.meta.url));
+const ASSETS_DIR = join(import.meta.dir, "../assets");
 const FONT_FILES = [
   "Carlito-Regular.ttf",
   "Carlito-Bold.ttf",
@@ -24,8 +23,12 @@ const FONT_FILES = [
 ] as const;
 
 function cleanEnvironment(home: string): NodeJS.ProcessEnv {
+  const localBin = process.env.HOME === undefined ? undefined : join(process.env.HOME, ".local", "bin");
+  const path = process.env.PATH;
   return {
-    PATH: process.env.PATH ?? "",
+    PATH: localBin === undefined || localBin.length === 0
+      ? path ?? ""
+      : path === undefined || path.length === 0 ? localBin : `${localBin}${delimiter}${path}`,
     HOME: home,
     TMPDIR: home,
     LANG: "C.UTF-8",

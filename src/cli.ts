@@ -1,5 +1,7 @@
+#!/usr/bin/env bun
+import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
-import { extname } from "node:path";
+import { extname, join } from "node:path";
 import { parseArgs } from "node:util";
 import { exportDocx } from "./docx.ts";
 import { DESIGN_VERSION, type PaperSize } from "./design.ts";
@@ -19,6 +21,7 @@ const USAGE = [
   "  bun run src/cli.ts evaluate --input <path> --dry-run [--json]",
   "  bun run src/cli.ts evaluate --input <path> --allow-remote [--out report.json] [--force] [--json]",
   "  bun run src/cli.ts render --input <path> --format pdf|docx --out <path> [--paper a4|letter] [--force] [--json]",
+  "  bun run src/cli.ts update [--json]",
 ].join("\n");
 
 const OPTIONS = {
@@ -91,6 +94,7 @@ export async function runCli(args: readonly string[], runtime: CliRuntimeOptions
   if (command === "validate") return runValidation(values);
   if (command === "evaluate") return runEvaluation(values, runtime.evaluation ?? {}, runtime.stdout ?? ((text) => process.stdout.write(text)));
   if (command === "render") return runRender(values);
+  if (command === "update") return hasCommandOptions(values) ? usageError(values.json) : runUpdate(values.json);
   return usageError(values.json);
 }
 
@@ -357,6 +361,21 @@ async function runRender(values: ParsedArguments["values"]): Promise<number> {
   }, json);
   return 0;
 }
+
+async function runUpdate(json: boolean): Promise<number> {
+  const setupScript = join(import.meta.dir, "../scripts/setup.sh");
+  const exitCode = await new Promise<number>((resolve) => {
+    const child = spawn("bash", [setupScript, process.cwd()], {
+      stdio: json ? ["ignore", "ignore", "inherit"] : "inherit",
+    });
+    child.once("error", () => resolve(-1));
+    child.once("close", (code) => resolve(code ?? -1));
+  });
+  if (exitCode !== 0) return ioError(json, "Toolkit update failed; see setup diagnostics.");
+  if (json) writeOutput({ status: "updated", workspace: process.cwd() }, true);
+  return 0;
+}
+
 
 function writeRenderOutput(
   result: {

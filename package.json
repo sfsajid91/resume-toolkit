@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": { "resume-toolkit": "./src/cli.ts" },
   "description": "Local validation, evaluation, and resume exports for existing AI agents",
   "dependencies": {
     "@typesafe-ai/sdk": "0.6.0",
