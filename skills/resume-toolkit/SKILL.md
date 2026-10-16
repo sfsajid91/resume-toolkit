@@ -23,18 +23,18 @@ Use this skill when a user asks to tailor or export a resume for a specific role
 
 From the repository, install locked dependencies with `bun install --frozen-lockfile`. PDF export also requires Typst **0.15.1** installed locally. Local validation, schema generation, dry-run preview, and PDF/DOCX exports need no API key or network access. Hosted evaluation requires `TYPESAFE_API_KEY`.
 
-The working command name is `resume-toolkit`; do not assume it is published or installed. If available, `resume-toolkit schema --kind application --json` is equivalent to `bun run src/cli.ts schema --kind application --json`; the same prefix substitution applies to every command below. Run the Bun forms from the repository, with explicit workspace paths if your application files are elsewhere:
+The working command name is `resume-toolkit` (or `bun run src/cli.ts` when working directly inside the development repository). Run commands from your workspace:
 
 ```sh
-bun run src/cli.ts --help
-bun run src/cli.ts --version
-bun run src/cli.ts schema --kind application --json
-bun run src/cli.ts schema --kind report --json
-bun run src/cli.ts validate --input application.v1.json --json
-bun run src/cli.ts evaluate --input application.v1.json --dry-run --json
-bun run src/cli.ts evaluate --input application.v1.json --allow-remote --out report.v1.json --json
-bun run src/cli.ts render --input application.v2.json --format pdf --paper a4 --out resume.v2.pdf --json
-bun run src/cli.ts render --input application.v2.json --format docx --paper a4 --out resume.v2.docx --json
+resume-toolkit --help
+resume-toolkit --version
+resume-toolkit schema --kind application --json
+resume-toolkit schema --kind report --json
+resume-toolkit validate --input application.v1.json --json
+resume-toolkit evaluate --input application.v1.json --dry-run --json
+resume-toolkit evaluate --input application.v1.json --allow-remote --out report.v1.json --json
+resume-toolkit render --input application.v2.json --format pdf --paper a4 --out resume.v2.pdf --json
+resume-toolkit render --input application.v2.json --format docx --paper a4 --out resume.v2.docx --json
 ```
 
 Available flags are `--help`, `--version`, `--json`, `--force`, `--dry-run`, `--allow-remote`, `--kind`, `--input`, `--out`, `--format`, and `--paper`. `schema` accepts `--kind application|report`. `render` requires `--format pdf|docx` and `--out` with matching extension; `--paper a4|letter` defaults to A4. `evaluate --out` must end in `.json`. `--force` applies only to explicit output writes and permits replacing an existing output; without it, writes do not clobber. Inputs are not mutated. Reject unknown or conflicting options; dry-run cannot be combined with `--allow-remote`, `--out`, or `--force`. Evaluation requires exactly one of `--dry-run` or `--allow-remote`; `--force` requires an evaluation `--out`.
@@ -48,18 +48,18 @@ Exit codes: **0** success (including semantic review findings); **1** invalid in
    Before saving a new or revised snapshot, and again before any `validate` or `evaluate` command, run a case-insensitive self-audit of generated summary and bullet text against the guide's complete banned-vocabulary list, including obvious word variants and dangling fluff tails. Rewrite every hit in plain, evidence-backed language; do not change source evidence or factual proper names to make the audit pass.
    Use `schemaVersion: 1`, a stable application `id`, and a positive integer `revision`. Keep IDs unique, dates factual, and entry-bullet evidence references within that entry. Evaluation needs evidence references on every claim/skill and a job with at least one quoted requirement; local rendering does not require evidence or a job. Run local validation:
    ```sh
-   bun run src/cli.ts validate --input application.v1.json --json
+   resume-toolkit validate --input application.v1.json --json
    ```
    Fix deterministic structural/reference errors; inspect warnings and ask about uncertain facts. Missing evidence can warn without blocking local export. Validation checks structure and linkage, not semantic support or source truth; `evidenceLinkage.status: "complete"` is not truth certification.
 2. Preview any evaluation before asking for approval:
    ```sh
-   bun run src/cli.ts evaluate --input application.v1.json --dry-run --json
+   resume-toolkit evaluate --input application.v1.json --dry-run --json
    ```
    Inspect the exact `inputHash`, validation, request, and `egressDisclosure`. The request sends selected resume name/header and content, referenced evidence IDs/text, job company/title and normalized requirements with exact quotes, and rubric questions to the TypeSafe hosted Jev API. It omits contact details (email, phone, location, links), evidence source locators, resume URLs, job source URL, and raw full job text. This is minimization, **not anonymity**: the preview includes private resume and evidence text.
 3. Show the preview/disclosure to the user and get explicit approval for this exact snapshot and transfer to TypeSafe before invoking `--allow-remote`, even if `TYPESAFE_API_KEY` is already set. Permission to apply for a job is not consent to send data to a provider. Do not make a live request without that approval. Without consent, stop at local work.
 4. With approval, request evaluation, optionally writing a report to a safe explicit path:
    ```sh
-   bun run src/cli.ts evaluate --input application.v1.json --allow-remote --out report.v1.json --json
+   resume-toolkit evaluate --input application.v1.json --allow-remote --out report.v1.json --json
    ```
    The toolkit sends a bounded, single evaluation request; it does not run an automatic revision loop. Deterministic validation errors are distinct from semantic findings. Review each evidence-support, requirement-coverage, relevance, and clarity result separately, including uncertainty and flagged targets. A successful evaluation can contain concerning findings and still exit 0. Do not collapse results into an ATS/hiring score, imply hiring probability, or claim truth verification. Label any simulated report or findings **synthetic**; never present them as live Jev results.
 5. At most **two** automated revision passes are permitted. Each pass must address findings without adding unsupported facts and write a new file (for example, `application.v2.json`) with `schemaVersion: 1` and incremented `revision`, preserving the earlier snapshot and underlying evidence. Never reuse a report whose hash differs from the current file. Preview changed data again and obtain fresh permission before remote re-evaluation. Stop after two passes and hand the current snapshot and findings to the user for review; do not keep iterating toward a score.

@@ -425,5 +425,7 @@ function formatIssue(issue: ValidationIssue): string {
 }
 
 if (import.meta.main) {
-  process.exitCode = await runCli(process.argv.slice(2));
+  void (async () => {
+    process.exitCode = await runCli(process.argv.slice(2));
+  })();
 }
