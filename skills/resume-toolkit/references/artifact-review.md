@@ -13,4 +13,5 @@ Check every item:
 - **Stranded headings:** no section heading left at a page bottom without its content.
 - **Bullet alignment:** consistent indentation, hanging alignment, and spacing; no clipped or misaligned bullets.
 - **Skills layout:** categories and items are legible, aligned, and not crowded or split confusingly.
+- **Text layer:** also extract PDF text with `pdftotext -enc UTF-8 resume.pdf resume.txt`. Check reading order, literal contact details, dates, credential status, technical terms, and accented characters against the final snapshot. Look for missing text and replacement glyphs; working links and page images alone cannot prove that text survived export. Check truthful target terms, not keyword coverage achieved by adding unsupported claims. If extraction is unavailable, disclose that limit rather than claiming it passed.
 Also check for clipping, overlaps, broken glyphs, orphan lines, missing content, and unexpected page breaks. Fix any issue and render again; inspect every new render. Report unresolved issues plainly. A visual check is not an ATS compatibility guarantee.
