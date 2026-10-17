@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { readFile, link, symlink, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
-import { loadSnapshot, MAX_INPUT_BYTES, pathsAlias } from "./io.ts";
-import { applicationSchema, generateJsonSchema, type Application } from "./schema.ts";
-import { validateApplication } from "./validate.ts";
+import { loadSnapshot, MAX_INPUT_BYTES, pathsAlias } from "../src/application/io.ts";
+import { applicationSchema, generateJsonSchema, type Application } from "../src/application/schema.ts";
+import { validateApplication } from "../src/application/validate.ts";
 
 const fixturePath = new URL("../examples/application.json", import.meta.url);
 const fixtureText = await readFile(fixturePath, "utf8");
@@ -19,7 +19,6 @@ describe("application contract and validation", () => {
     expect(result.status).toBe("valid");
     expect(result.evidenceLinkage.status).toBe("complete");
     expect(result.issues.filter((issue) => issue.severity === "error")).toEqual([]);
-    expect(result.issues).toContainEqual(expect.objectContaining({ code: "lint.skills_thin", severity: "warning" }));
 
     const bytes = await readFile(fixturePath);
     const loaded = await loadSnapshot(fixturePath.pathname);

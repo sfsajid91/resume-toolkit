@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
 import { z } from "zod";
 import type { EntryType, Fetch, Questions } from "@typesafe-ai/sdk";
-import { applicationSchema, reportSchema, type Application, type Report, type ValidationIssue, type ValidationResult } from "./schema.ts";
-import { validateApplication } from "./validate.ts";
+import { applicationSchema, reportSchema, type Application, type Report, type ValidationIssue, type ValidationResult } from "../application/schema.ts";
+import { validateApplication } from "../application/validate.ts";
 
 export const REQUESTED_MODEL = "jev-latest";
 export const RUBRIC_VERSION = "resume-evaluation-v1";

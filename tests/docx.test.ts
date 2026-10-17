@@ -2,9 +2,9 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema } from "./schema.ts";
-import { resolveResume, type ResolvedResume } from "./resume.ts";
-import { exportDocx } from "./docx.ts";
+import { applicationSchema } from "../src/application/schema.ts";
+import { resolveResume, type ResolvedResume } from "../src/resume/resume.ts";
+import { exportDocx } from "../src/render/docx.ts";
 
 async function fixture(path: string): Promise<ResolvedResume> {
   const source = await readFile(new URL(path, import.meta.url), "utf8");
@@ -70,7 +70,9 @@ describe("editable DOCX export", () => {
       const summaryText = resume.summary.join(" ");
       expect(paragraphs.filter((value) => value === summaryText)).toHaveLength(1);
       expect(paragraphs).not.toContain("PROFESSIONAL EXPERIENCETECHNICAL SKILLS");
-      expect(paragraphs).toContain("morgan.example.net | github.com/morgan-example");
+      expect(paragraphs.some((value) => value.replace(/\s+/gu, " ").trim() === "Portfolio | GitHub")).toBe(true);
+      expect(body).toContain("<w:drawing>");
+      expect(visible.join(" ")).not.toContain("svg");
       expect(relationships).toContain("https://morgan.example.net");
       expect(relationships).toContain("https://github.com/morgan-example");
       const experience = resume.sections.find((section) => section.kind === "experience");
@@ -207,22 +209,24 @@ describe("editable DOCX export", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  test("keeps project links on the subtitle line and renders locations and certification dates", async () => {
+  test("preserves readable project titles, link targets, and dates", async () => {
     const resume = await fixture("../examples/lint-bad-application.json");
     const directory = await temporaryDirectory();
     const output = join(directory, "lint-layout.docx");
     const projectTitle = "Multi Region Incident Response and Deployment Recovery Readiness Toolkit";
     try {
       await exportDocx(resume, { outputPath: output, paper: "a4", force: false });
-      const [body, styles] = await Promise.all([
+      const [body, relationships, styles] = await Promise.all([
         zipPart(output, "word/document.xml"),
+        zipPart(output, "word/_rels/document.xml.rels"),
         zipPart(output, "word/styles.xml"),
       ]);
       const paragraphs = paragraphTexts(body);
       const projectHeader = paragraphs.find((value) => value.startsWith(projectTitle));
       expect(projectHeader).toContain("Apr 2019 – Apr 2020");
       expect(projectHeader).not.toContain("example.org");
-      expect(paragraphs.some((value) => value.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
+      expect(paragraphs.some((value) => value.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(false);
+      expect(relationships).toContain("https://example.org/projects/recovery-readiness-toolkit");
       expect(paragraphs.some((value) =>
         value.replace(/\s+/gu, " ") === "Northstar — Recovery Systems | Portland, OR",
       )).toBe(true);
@@ -234,7 +238,7 @@ describe("editable DOCX export", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  test("serializes Phase 7 header links and section-wide subtitle slots", async () => {
+  test("serializes compact header links and stack-free experience/project subtitles", async () => {
     const resume = await fixture("../examples/phase7-render-application.json");
     const directory = await temporaryDirectory();
     const output = join(directory, "phase7.docx");
@@ -245,23 +249,22 @@ describe("editable DOCX export", () => {
         zipPart(output, "word/_rels/document.xml.rels"),
         zipPart(output, "word/styles.xml"),
       ]);
-      const paragraphs = paragraphTexts(body).map((value) => value.replaceAll("\u2060", ""));
-      const linkParagraphs = paragraphs.filter((value) => /linkedin\.com|research\.example|Open profile/u.test(value));
+      const paragraphs = paragraphTexts(body).map((value) => value.replaceAll("\u2060", "").replace(/\s+/gu, " ").trim());
+      const linkParagraphs = paragraphs.filter((value) => /LinkedIn|Research profile|Code samples/u.test(value));
       expect(linkParagraphs).toHaveLength(2);
-      expect(linkParagraphs.map((value) => value.split(" | ").length)).toEqual([3, 5]);
+      expect(linkParagraphs.map((value) => value.split(" | ").length)).toEqual([4, 4]);
+      expect(paragraphs.some((value) => value.includes("LinkedIn"))).toBe(true);
+      expect(paragraphs.some((value) => value.includes("Open profile"))).toBe(true);
       expect(relationships).toContain("https://linkedin.com/in/jordan-example/");
-      expect(relationships).not.toContain("Open profile");
-      expect(paragraphs).toContain("Sample Research Lab | North Sample | TypeScript, PostgreSQL, Docker");
-      expect(paragraphs).toContain("Example Studio | Python, FastAPI");
+      expect(paragraphs).toContain("Sample Research Lab | North Sample");
+      expect(paragraphs).toContain("Example Studio");
       expect(paragraphs).toContain("Community Workshop | West Example");
       expect(paragraphs).toContain("Personal scheduling application");
       expect(paragraphs).toContain("Open data explorer");
       expect(paragraphs).toContain("Accessibility audit helper");
-      expect(paragraphs).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
-      expect(paragraphs).toContain("Svelte, MapLibre, Vite");
-      expect(paragraphs.some((value) =>
-        value.replace(/\s+/gu, " ") === "Sample City | tools.example.test/access-check",
-      )).toBe(true);
+      expect(paragraphs).not.toContain("React, SQLite");
+      expect(paragraphs).not.toContain("Svelte, MapLibre, Vite");
+      expect(paragraphs).toContain("Sample City");
       expect(paragraphStyle(styles, "ResumeSectionHeading")).toContain('w:before="360"');
     } finally {
       await rm(directory, { recursive: true, force: true });

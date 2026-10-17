@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { Application } from "./schema.ts";
-import { lintApplication } from "./lint.ts";
+import type { Application } from "../src/application/schema.ts";
+import { lintApplication } from "../src/application/lint.ts";
 
 type Kind = Application["resume"]["sections"][number]["kind"];
 type Dates = { readonly start?: string; readonly end?: string | null; readonly expires?: string };
@@ -127,15 +127,6 @@ describe("resume lint rules", () => {
   expect(has(good, "opener_repeat")).toBe(false);
  });
 
- test("no number ignores entries with fewer than two bullets", () => {
-  const bad = application();
-  addEntry(bad, "experience", "bad", [longBullet("Built"), longBullet("Shipped")]);
-  expect(has(bad, "no_number")).toBe(true);
-  const good = application();
-  addEntry(good, "experience", "one", ["Built systems"]);
-  addEntry(good, "experience", "two", [longBullet("Built"), "Shipped 12 services across customer systems and engineering teams with clear operational results every quarter"]);
-  expect(has(good, "no_number")).toBe(false);
- });
 
  test("duplicate bullets compare only across entries", () => {
   const bad = application();
@@ -169,28 +160,15 @@ describe("resume lint rules", () => {
   expect(has(good, "summary")).toBe(false);
  });
 
- test("skills require useful categories and enough items", () => {
-  const bad = application();
-  bad.resume.skills = [{ id: "one", label: "TypeScript", category: "Developer platforms", evidenceIds: [] }];
-  expect(has(bad, "skills_thin")).toBe(true);
-  const good = application();
-  good.resume.skills = Array.from({ length: 15 }, (_, index) => ({
-   id: `skill-${index}`,
-   label: `Skill ${index}`,
-   category: `Category ${Math.floor(index / 5)}`,
-   evidenceIds: [],
-  }));
-  expect(has(good, "skills_thin")).toBe(false);
- });
+ test("skills flag broad domain labels without enforcing quotas or repetition", () => {
+  const broad = application();
+  broad.resume.skills = [{ id: "one", label: "Developer platforms", category: "Developer platforms", evidenceIds: [] }];
+  expect(has(broad, "skills_domain")).toBe(true);
 
- test("technology used in multiple bullets appears in skills", () => {
-  const bad = application();
-  addEntry(bad, "experience", "bad", [longBullet("TypeScript"), longBullet("TypeScript")]);
-  expect(has(bad, "skill_not_in_body")).toBe(true);
-  const good = application();
-  addEntry(good, "experience", "good", [longBullet("TypeScript"), longBullet("TypeScript")]);
-  good.resume.skills = [{ id: "typescript", label: "TypeScript", evidenceIds: [] }];
-  expect(has(good, "skill_not_in_body")).toBe(false);
+  const selective = application();
+  selective.resume.skills = [{ id: "typescript", label: "TypeScript", category: "Languages", evidenceIds: [] }];
+  addEntry(selective, "experience", "work", [longBullet("TypeScript"), longBullet("TypeScript")]);
+  expect(has(selective, "skills_thin")).toBe(false);
  });
 
  test("date overlap threshold is greater than three months", () => {

@@ -235,7 +235,7 @@
       }
     ],
     "skills": [
-      { "id": "skill-ts", "label": "TypeScript", "category": "Developer platforms", "evidenceIds": [] },
+      { "id": "skill-domain", "label": "Developer platforms", "category": "Tools", "evidenceIds": [] },
       { "id": "skill-python", "label": "Python", "evidenceIds": [] },
       { "id": "skill-postgres", "label": "PostgreSQL", "evidenceIds": [] }
     ]

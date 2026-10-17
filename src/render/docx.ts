@@ -1,8 +1,9 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import {
   AlignmentType,
   Document,
   ExternalHyperlink,
+  ImageRun,
   LevelFormat,
   LineRuleType,
   Packer,
@@ -11,11 +12,15 @@ import {
   TabStopType,
   TextRun,
 } from "docx";
-import { DESIGN, DESIGN_VERSION, type PaperSize } from "./design.ts";
-import type { ResolvedResume } from "./resume.ts";
-import { writeStagedOutput } from "./io.ts";
+import { DESIGN, DESIGN_VERSION, type PaperSize } from "../resume/design.ts";
+import type { ResolvedResume } from "../resume/resume.ts";
+import { writeStagedOutput } from "../application/io.ts";
 
 const rendererVersion = "docx@9.10.0";
+const ICONS_DIR = new URL("../../assets/icons/", import.meta.url);
+type LinkIcon = "globe" | "github";
+type IconAsset = { readonly svg: Uint8Array; readonly png: Uint8Array };
+type IconData = Readonly<Record<LinkIcon, IconAsset>>;
 const twipsPerMm = 1440 / 25.4;
 const pointsToTwips = (points: number) => points * 20;
 
@@ -43,10 +48,19 @@ function text(value: string, options: RunOptions = {}): TextRun {
   });
 }
 
-function hyperlink(url: string, label: string, options: RunOptions = {}, noBreak = false): ExternalHyperlink {
+function hyperlink(url: string, label: string, icon: LinkIcon, icons: IconData, options: RunOptions = {}, noBreak = false): ExternalHyperlink {
   return new ExternalHyperlink({
     link: url,
-    children: [text(noBreak ? label.split("").join("\u2060") : label, { ...options, color: DESIGN.colors.link })],
+    children: [
+      new ImageRun({
+        type: "svg",
+        data: icons[icon].svg,
+        fallback: { type: "png", data: icons[icon].png },
+        transformation: { width: 10, height: 10 },
+        altText: { name: "", description: "" },
+      }),
+      text(` ${noBreak ? label.split("").join("\u2060") : label}`, { ...options, color: DESIGN.colors.link }),
+    ],
   });
 }
 
@@ -100,7 +114,7 @@ function tabbedParagraph(
   });
 }
 
-function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): Paragraph[] {
+function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number, icons: IconData): Paragraph[] {
   const children: Paragraph[] = [];
   const contactValues = [resume.basics.location, resume.basics.phone, resume.basics.email]
     .filter((value): value is string => value !== undefined);
@@ -128,11 +142,11 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
     ));
   }
   for (const [lineIndex, line] of resume.basics.linkLines.entries()) {
-    const linkRuns = line.flatMap(({ label, url }, index) => [
+    const linkRuns = line.flatMap(({ label, url, icon }, index) => [
       ...(index === 0 ? [] : [text(" | ", { sizePt: DESIGN.contactFontPt, color: DESIGN.colors.secondary })]),
       ...(url === undefined
         ? [text(label, { sizePt: DESIGN.contactFontPt, color: DESIGN.colors.secondary })]
-        : [hyperlink(url, label, { sizePt: DESIGN.contactFontPt }, true)]),
+        : [hyperlink(url, label, icon ?? "globe", icons, { sizePt: DESIGN.contactFontPt }, true)]),
     ]);
     children.push(paragraph(linkRuns, "ResumeContact", {
       keepNext: lineIndex < resume.basics.linkLines.length - 1,
@@ -164,31 +178,40 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
       const dateRun = entry.dateText === ""
         ? []
         : [text(entry.dateText, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false })];
+      const headingRuns: (TextRun | ExternalHyperlink)[] = [
+        text(entry.heading, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary }),
+      ];
+      if (section.kind === "projects" && entry.dateText === "" && entry.url !== undefined) {
+        headingRuns.push(text("  "));
+        headingRuns.push(hyperlink(entry.url, entry.urlLabel ?? "Live", entry.urlIcon ?? "globe", icons, { sizePt: DESIGN.entryDetailFontPt }));
+      }
       const detailRuns: (TextRun | ExternalHyperlink)[] = [];
       if (section.subtitleSlots) {
-        const visibleSlots = entry.subtitle
-          .map((slot, index) => ({ slot, index }))
-          .filter(({ slot }) => slot !== "");
-        for (const [i, { slot }] of visibleSlots.entries()) {
-          if (i > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+        const visibleSlots = entry.subtitle.filter((slot) => slot !== "");
+        for (const [index, slot] of visibleSlots.entries()) {
+          if (index > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
           detailRuns.push(entry.url !== undefined && slot === entry.urlLabel
-            ? hyperlink(entry.url, slot, { sizePt: DESIGN.entryDetailFontPt, italic: true }, true)
+            ? hyperlink(entry.url, slot, entry.urlIcon ?? "globe", icons, { sizePt: DESIGN.entryDetailFontPt, italic: true }, true)
             : text(slot, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
         }
       } else {
         if (entry.detail !== "") {
           detailRuns.push(text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
         }
-        if (entry.url !== undefined) {
+        if (entry.url !== undefined && section.kind !== "projects") {
           if (detailRuns.length > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
-          detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? entry.url, { sizePt: DESIGN.entryDetailFontPt, italic: true }));
+          detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? entry.url, entry.urlIcon ?? "globe", icons, { sizePt: DESIGN.entryDetailFontPt, italic: true }));
         }
       }
+      if (section.kind === "projects" && entry.dateText !== "" && entry.url !== undefined) {
+        if (detailRuns.length > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary }));
+        detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? "Live", entry.urlIcon ?? "globe", icons, { sizePt: DESIGN.entryDetailFontPt }));
+      }
       children.push(tabbedParagraph(
-        [text(entry.heading, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
+        headingRuns,
         dateRun,
         printableWidthTwips,
-        { keepNext: detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
+        { keepNext: detailRuns.length > 0 || entry.detail !== "" || entry.bullets.length > 0, spacingBeforePt },
       ));
       if (section.subtitleSlots && entry.detail !== "") {
         children.push(paragraph([
@@ -212,7 +235,7 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
   return children;
 }
 
-function createDocument(resume: ResolvedResume, paper: PaperSize): Document {
+function createDocument(resume: ResolvedResume, paper: PaperSize, icons: IconData): Document {
   const paperDimensions = DESIGN.papers[paper];
   const leftMarginTwips = Math.round(DESIGN.marginsMm.left * twipsPerMm);
   const rightMarginTwips = Math.round(DESIGN.marginsMm.right * twipsPerMm);
@@ -277,7 +300,7 @@ function createDocument(resume: ResolvedResume, paper: PaperSize): Document {
           },
         },
       },
-      children: resumeParagraphs(resume, printableWidthTwips),
+      children: resumeParagraphs(resume, printableWidthTwips, icons),
     }],
   });
 }
@@ -286,7 +309,17 @@ export async function exportDocx(
   resume: ResolvedResume,
   options: { readonly outputPath: string; readonly paper: PaperSize; readonly force: boolean },
 ): Promise<string> {
-  const document = createDocument(resume, options.paper);
+  const icons: IconData = {
+    globe: {
+      svg: await readFile(new URL("globe.svg", ICONS_DIR)),
+      png: await readFile(new URL("globe.png", ICONS_DIR)),
+    },
+    github: {
+      svg: await readFile(new URL("github.svg", ICONS_DIR)),
+      png: await readFile(new URL("github.png", ICONS_DIR)),
+    },
+  };
+  const document = createDocument(resume, options.paper, icons);
   await writeStagedOutput(options.outputPath, options.force, async (stagedPath) => {
     await writeFile(stagedPath, await Packer.toBuffer(document));
   });

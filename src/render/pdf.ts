@@ -2,14 +2,14 @@ import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import type { ResolvedResume } from "./resume.ts";
-import { DESIGN, DESIGN_VERSION, type PaperSize } from "./design.ts";
-import { writeStagedOutput } from "./io.ts";
+import type { ResolvedResume } from "../resume/resume.ts";
+import { DESIGN, DESIGN_VERSION, type PaperSize } from "../resume/design.ts";
+import { writeStagedOutput } from "../application/io.ts";
 
 const REQUIRED_TYPST_VERSION = "0.15.1";
 const COMPILATION_TIMEOUT_MS = 30_000;
 const VERSION_TIMEOUT_MS = 5_000;
-const ASSETS_DIR = join(import.meta.dir, "../assets");
+const ASSETS_DIR = join(import.meta.dir, "../../assets");
 const FONT_FILES = [
   "Caladea-Regular.ttf",
   "Caladea-Bold.ttf",
@@ -90,10 +90,12 @@ export async function exportPdf(
     const version = await verifyTypstVersion(root);
     await writeStagedOutput(options.outputPath, options.force, async (stagedPath) => {
       const fontDir = join(root, "fonts");
-      await mkdir(fontDir);
+      const iconDir = join(root, "icons");
+      await Promise.all([mkdir(fontDir), mkdir(iconDir)]);
       await Promise.all([
         copyFile(join(ASSETS_DIR, "resume.typ"), join(root, "resume.typ")),
         ...FONT_FILES.map((file) => copyFile(join(ASSETS_DIR, "fonts", file), join(fontDir, file))),
+        ...(["globe.svg", "github.svg"] as const).map((file) => copyFile(join(ASSETS_DIR, "icons", file), join(iconDir, file))),
         writeFile(join(root, "resume.json"), JSON.stringify(resume), { flag: "wx" }),
       ]);
       await runTypst([

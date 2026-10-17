@@ -3,14 +3,14 @@ import { readFile, writeFile } from "node:fs/promises";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
 import { installLatestRelease } from "../scripts/release.ts";
-import { exportDocx } from "./docx.ts";
-import { DESIGN_VERSION, type PaperSize } from "./design.ts";
-import { evaluatePrepared, prepareEvaluation, type EvaluationTransportOptions } from "./evaluate.ts";
-import { loadSnapshot, pathsAlias, writeStagedOutput } from "./io.ts";
-import { exportPdf } from "./pdf.ts";
-import { resolveResume } from "./resume.ts";
-import { applicationSchema, generateJsonSchema, schemaKindSchema, type Report, type ValidationIssue, type ValidationOutput } from "./schema.ts";
-import { validateApplication } from "./validate.ts";
+import { exportDocx } from "./render/docx.ts";
+import { DESIGN_VERSION, type PaperSize } from "./resume/design.ts";
+import { evaluatePrepared, prepareEvaluation, type EvaluationTransportOptions } from "./evaluation/evaluate.ts";
+import { loadSnapshot, pathsAlias, writeStagedOutput } from "./application/io.ts";
+import { exportPdf } from "./render/pdf.ts";
+import { resolveResume } from "./resume/resume.ts";
+import { applicationSchema, generateJsonSchema, schemaKindSchema, type Report, type ValidationIssue, type ValidationOutput } from "./application/schema.ts";
+import { validateApplication } from "./application/validate.ts";
 
 const USAGE = [
   "Usage:",

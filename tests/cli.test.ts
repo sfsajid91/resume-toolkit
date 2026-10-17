@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema } from "./schema.ts";
+import { applicationSchema } from "../src/application/schema.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const fixturePath = join(projectRoot, "examples", "application.json");
@@ -219,7 +219,7 @@ describe("CLI subprocess behavior", () => {
     const conflict = runCli(["--help", "--version", "--json"]);
     const version = runCli(["--version", "--json"]);
     expect(version.exitCode).toBe(0);
-    expect(parseObject(version.stdout).version).toBe("0.2.0");
+    expect(parseObject(version.stdout).version).toBe("0.3.0");
     expect(conflict.exitCode).toBe(2);
     expect(parseObject(conflict.stdout).error).toEqual(expect.objectContaining({ code: "usage_error" }));
   });

@@ -1,6 +1,8 @@
-import type { Application } from "./schema.ts";
+import type { Application } from "../application/schema.ts";
 
 export type ResumeSectionKind = Application["resume"]["sections"][number]["kind"];
+
+type LinkIcon = "globe" | "github";
 
 type ResolvedEntry = {
   readonly heading: string;
@@ -9,6 +11,7 @@ type ResolvedEntry = {
   readonly subtitle: readonly [string, string, string];
   readonly url?: string;
   readonly urlLabel?: string;
+  readonly urlIcon?: LinkIcon;
   readonly bullets: readonly string[];
 };
 
@@ -29,17 +32,28 @@ export type ResolvedResume = {
     readonly email?: string;
     readonly phone?: string;
     readonly location?: string;
-    readonly links: readonly { readonly label: string; readonly url?: string }[];
-    readonly linkLines: readonly (readonly { readonly label: string; readonly url?: string }[])[];
+    readonly links: readonly { readonly label: string; readonly url?: string; readonly icon?: LinkIcon }[];
+    readonly linkLines: readonly (readonly { readonly label: string; readonly url?: string; readonly icon?: LinkIcon }[])[];
   };
   readonly summary: readonly string[];
   readonly sections: readonly ResolvedSection[];
   readonly skills: readonly ResolvedSkillGroup[];
 };
 
-const GENERIC_LINK_LABELS = new Set(["github", "linkedin", "portfolio", "website"]);
-const URL_STYLE_LABEL = /^(?:https?:\/\/)?(?:www\.)?[^/?#\s]+(?:\/[^?#\s]*|[?#]\S*)$/iu;
+const GENERIC_LINK_LABELS: Record<string, string> = {
+  github: "GitHub",
+  linkedin: "LinkedIn",
+  portfolio: "Portfolio",
+  website: "Portfolio",
+};
 
+function linkIcon(url: string): LinkIcon {
+  try {
+    return new URL(url).hostname.replace(/^www\./iu, "").toLowerCase() === "github.com" ? "github" : "globe";
+  } catch {
+    return "globe";
+  }
+}
 
 const SECTION_TITLES: Record<ResumeSectionKind, string> = {
   experience: "PROFESSIONAL EXPERIENCE",
@@ -61,23 +75,11 @@ function formatDate(value: string): string {
 export function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//iu, "").replace(/^www\./iu, "").replace(/\/+$/u, "");
 }
-function displayLinkLabel(label: string, url: string | undefined): string {
-  if (url === undefined) return label;
-  if (GENERIC_LINK_LABELS.has(label.trim().toLowerCase())) return displayUrl(url);
-  if (URL_STYLE_LABEL.test(label)) return label;
+const displayLinkLabel = (label: string) => {
+  const key = label.trim().toLowerCase();
+  return Object.hasOwn(GENERIC_LINK_LABELS, key) ? GENERIC_LINK_LABELS[key]! : label;
+};
 
-  let hostname: string;
-  try {
-    hostname = new URL(url).hostname.replace(/^www\./iu, "").toLowerCase();
-  } catch {
-    return label;
-  }
-  const labelDomain = label.trim()
-    .replace(/^(?:https?:\/\/)?(?:www\.)/iu, "")
-    .replace(/[/?#].*$/u, "")
-    .toLowerCase();
-  return hostname === labelDomain ? displayUrl(url) : label;
-}
 
 function groupHeaderLinks(links: readonly { readonly label: string; readonly url?: string }[]) {
   if (links.length < 2) return [links];
@@ -122,15 +124,13 @@ export function resolveResume(application: Application): ResolvedResume {
   const { basics, summary, sections, skills, sectionOrder } = application.resume;
   const resolvedSections = sections.map((section) => {
     const subtitleSlots = (section.kind === "experience" || section.kind === "projects")
-      && section.items.some((item) =>
-        item.location !== undefined || item.url !== undefined || ("stack" in item && (item.stack?.length ?? 0) > 0));
+      && section.items.some((item) => item.location !== undefined || (section.kind === "experience" && item.url !== undefined));
     return {
       kind: section.kind,
       title: SECTION_TITLES[section.kind],
       subtitleSlots,
       entries: section.items.map((item) => {
         const { name, title, issuer, location, start, end, expires, url, bullets } = item;
-        const stack = "stack" in item ? item.stack : undefined;
         const certification = section.kind === "certifications";
         const expiration = expires ?? (certification && typeof end === "string" ? end : undefined);
         const dateText = certification
@@ -142,6 +142,7 @@ export function resolveResume(application: Application): ResolvedResume {
             start === undefined ? undefined : formatDate(start),
             end === null ? "Present" : end === undefined ? undefined : formatDate(end),
           ].filter((value): value is string => value !== undefined).join(" – ");
+        const urlIcon = url === undefined ? undefined : linkIcon(url);
         const detailValues = subtitleSlots
           ? section.kind === "projects" ? [title] : []
           : section.kind === "experience" || section.kind === "education"
@@ -154,14 +155,13 @@ export function resolveResume(application: Application): ResolvedResume {
           detail,
           subtitle: [
             section.kind === "experience" && title !== undefined ? name : location ?? "",
-            section.kind === "experience" && title !== undefined ? (location ?? "") : (stack?.join(", ") ?? ""),
-            section.kind === "experience" && title !== undefined
-              ? (stack?.join(", ") ?? "")
-              : url === undefined ? "" : displayUrl(url),
+            section.kind === "experience" && title !== undefined ? (location ?? "") : "",
+            "",
           ] as const,
           ...(url === undefined ? {} : {
             url,
-            urlLabel: section.kind === "projects" ? displayUrl(url) : name,
+            urlLabel: section.kind === "projects" ? urlIcon === "github" ? "GitHub" : "Live" : name,
+            urlIcon: urlIcon ?? "globe",
           }),
           bullets: bullets.map(({ text }) => text),
         };
@@ -208,10 +208,13 @@ export function resolveResume(application: Application): ResolvedResume {
       ...(basics.email === undefined ? {} : { email: basics.email }),
       ...(basics.phone === undefined ? {} : { phone: basics.phone }),
       ...(basics.location === undefined ? {} : { location: basics.location }),
-      links: basics.links.map(({ label, url }) => ({ label: displayLinkLabel(label, url), ...(url === undefined ? {} : { url }) })),
+      links: basics.links.map(({ label, url }) => ({
+        label: displayLinkLabel(label),
+        ...(url === undefined ? {} : { url, icon: linkIcon(url) }),
+      })),
       linkLines: groupHeaderLinks(basics.links.map(({ label, url }) => ({
-        label: displayLinkLabel(label, url),
-        ...(url === undefined ? {} : { url }),
+        label: displayLinkLabel(label),
+        ...(url === undefined ? {} : { url, icon: linkIcon(url) }),
       }))),
     },
     summary: summary.map(({ text }) => text),

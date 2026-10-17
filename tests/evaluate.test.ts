@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
-import { runCli } from "./cli.ts";
-import { MAX_REQUEST_BYTES, prepareEvaluation } from "./evaluate.ts";
-import { applicationSchema, reportSchema, type Application } from "./schema.ts";
+import { runCli } from "../src/cli.ts";
+import { MAX_REQUEST_BYTES, prepareEvaluation } from "../src/evaluation/evaluate.ts";
+import { applicationSchema, reportSchema, type Application } from "../src/application/schema.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const fixturePath = `${projectRoot}/examples/application.json`;

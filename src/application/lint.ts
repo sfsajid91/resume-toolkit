@@ -251,16 +251,6 @@ function lintOpenerRepeat(application: Application): ValidationIssue[] {
  return issues;
 }
 
-function lintNoNumber(application: Application): ValidationIssue[] {
- return entryTargets(application)
-  .filter(({ entry }) => entry.bullets.length >= 2 && !entry.bullets.some(({ text }) => /\d/u.test(text)))
-  .map(({ entry, path }) => makeIssue(
-   "no_number",
-   `${path}/bullets`,
-   "Include a quantified result where supported.",
-   [entry.id, ...entry.bullets.map(({ id }) => id)],
-  ));
-}
 
 function tokens(text: string): Set<string> {
  return new Set(text.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
@@ -367,66 +357,16 @@ function lintSummary(application: Application, now: number): ValidationIssue[] {
 
 function lintSkillsThin(application: Application): ValidationIssue[] {
  const skills = application.resume.skills;
- const issues: ValidationIssue[] = [];
- if (skills.length < 4) {
-  issues.push(makeIssue("skills_thin", "/resume/skills", "Include at least four skills.", skills.map(({ id }) => id)));
- }
-
- const groups = new Map<string, { readonly label: string; readonly ids: string[]; count: number }>();
- for (const skill of skills) {
-  if (skill.category === undefined) continue;
-  const key = skill.category.toLocaleLowerCase();
-  const group = groups.get(key) ?? { label: skill.category, ids: [], count: 0 };
-  group.ids.push(skill.id);
-  group.count++;
-  groups.set(key, group);
- }
-
- const uncategorized = skills.filter(({ category }) => category === undefined);
- if (skills.length > 0 && uncategorized.length / skills.length > 0.4) {
-  issues.push(makeIssue("skills_thin", "/resume/skills", "Too many skills are uncategorized.", uncategorized.map(({ id }) => id)));
- }
- if (skills.length > 0 && (groups.size < 3 || groups.size > 5)) {
-  issues.push(makeIssue("skills_thin", "/resume/skills", "Use three to five skill categories.", skills.map(({ id }) => id)));
- }
- for (const group of groups.values()) {
-  if (group.count === 1) {
-   issues.push(makeIssue("skills_thin", "/resume/skills", `Category “${group.label}” has only one skill.`, group.ids));
-  }
-  if (group.count < 5 || group.count > 8) {
-   issues.push(makeIssue("skills_thin", "/resume/skills", `Category “${group.label}” should have five to eight skills.`, group.ids));
-  }
- }
-
  const domainLabels = DOMAIN_LIKE_SKILL_LABELS.map((label) => label.toLocaleLowerCase());
  const vague = skills.filter(({ category, label }) =>
   domainLabels.includes(label.trim().toLocaleLowerCase())
   || (category !== undefined && domainLabels.includes(category.trim().toLocaleLowerCase())),
  );
- if (vague.length > 0) {
-  issues.push(makeIssue("skills_thin", "/resume/skills", "Replace domain-like labels with specific skills.", vague.map(({ id }) => id)));
- }
- return issues;
+ return vague.length > 0
+  ? [makeIssue("skills_thin", "/resume/skills", "Replace domain-like labels with specific skills.", vague.map(({ id }) => id))]
+  : [];
 }
 
-function lintSkillNotInBody(application: Application): ValidationIssue[] {
- const bullets = bulletTargets(application);
- const labels = application.resume.skills.map(({ label }) => label);
- const issues: ValidationIssue[] = [];
- for (const technology of TECHNOLOGY_TERMS) {
-  const pattern = termPattern(technology);
-  const uses = bullets.filter(({ text }) => pattern.test(text));
-  if (uses.length >= 2 && !labels.some((label) => pattern.test(label))) {
-   issues.push(makeIssue(
-    "skill_not_in_body",
-    "/resume/skills",
-    `Technology ${technology} appears in bullets but not skills.`,
-    uses.map(({ id }) => id),
-   ));
-  }
- }
- return issues;
-}
 
 function intervalEnd(entry: Entry, now: number): number | undefined {
  if (entry.end === null) return now;
@@ -694,12 +634,10 @@ export function lintApplication(
   ...lintBulletLength(application),
   ...lintBulletCount(application, now),
   ...lintOpenerRepeat(application),
-  ...lintNoNumber(application),
   ...lintDuplicateBullet(application),
   ...lintRepeatedTheme(application, options?.repeatedThemes ?? REPEATED_THEMES),
   ...lintSummary(application, now),
   ...lintSkillsThin(application),
-  ...lintSkillNotInBody(application),
   ...lintDateOverlap(application, now),
   ...lintCertExpired(application, now),
   ...lintHedgeText(application),

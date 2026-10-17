@@ -100,7 +100,7 @@ type Entry = {
   start?: string; // calendar-valid YYYY-MM
   end?: string | null; // null = ongoing; omitted = not recorded
   location?: string;
-  stack?: string[]; // experience/project only; comma-separated in the renderer
+  stack?: string[]; // experience/project only; preserved as input, not emitted as standalone renderer metadata
   url?: string;
   expires?: string; // optional certification expiry, YYYY-MM
   bullets: Claim[];
@@ -141,8 +141,8 @@ These outlines are design contracts, not a second manually maintained schema. Im
 - Section kinds are unique; by default preserve input section and item order. A supplied `sectionOrder` controls rendered order. Headings come from a fixed map: Professional Experience, Selected Projects, Education, Certifications, plus Professional Summary and Technical Skills.
 - Experience requires title/start; education requires title; certification requires issuer. At least one entry or skill must exist. Empty summary and credential bullets are allowed.
 - Validate calendar months and chronological order. Do not invent dates or silently normalize them.
-- Lint runs with `lint --input <file> --json` and is also included by `validate`. It emits only `severity: "warning"` issues with `lint.*` codes, JSON-pointer paths, and related IDs. The code set is `lint.banned_word`, `lint.dash`, `lint.without_tail`, `lint.rule_of_three`, `lint.weak_opener`, `lint.bullet_length`, `lint.bullet_count`, `lint.opener_repeat`, `lint.no_number`, `lint.duplicate_bullet`, `lint.repeated_theme`, `lint.summary`, `lint.skills_thin`, `lint.skill_not_in_body`, `lint.date_overlap`, `lint.cert_expired`, `lint.hedge_text`, `lint.transaction_bullet`, `lint.vague_verb`, `lint.no_stack`, `lint.thin_experience`, `lint.missing_contact`, `lint.header_links`, `lint.skills_domain`, `lint.freelance_gap`, and `lint.project_unlinked`. Lint warnings do not change valid/invalid status, evidence linkage, exit codes, or export eligibility.
-- Optional input additions are `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder`; they do not change `schemaVersion: 1`. `sectionOrder` IDs are unique; listed sections come first, then omitted sections follow the current default order. Students and early-career applicants should place `education` before `projects`.
+- Lint runs with `lint --input <file> --json` and is also included by `validate`. It emits only `severity: "warning"` issues with `lint.*` codes, JSON-pointer paths, and related IDs. The code set is `lint.banned_word`, `lint.dash`, `lint.without_tail`, `lint.rule_of_three`, `lint.weak_opener`, `lint.bullet_length`, `lint.bullet_count`, `lint.opener_repeat`, `lint.duplicate_bullet`, `lint.repeated_theme`, `lint.summary`, `lint.skills_thin`, `lint.date_overlap`, `lint.cert_expired`, `lint.hedge_text`, `lint.transaction_bullet`, `lint.vague_verb`, `lint.no_stack`, `lint.thin_experience`, `lint.missing_contact`, `lint.header_links`, `lint.skills_domain`, `lint.freelance_gap`, and `lint.project_unlinked`. Lint warnings do not change valid/invalid status, evidence linkage, exit codes, or export eligibility.
+- Optional input additions are `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder`; they do not change `schemaVersion: 1`. `sectionOrder` IDs are unique; listed sections come first, then omitted sections follow the current default order. Order sections by the strongest relevant evidence; education may lead for students, while substantial work or projects may lead for other early-career applicants.
 - When evidence is supplied, every referenced evidence ID must resolve; entry bullets may reference only evidence belonging to that entry. Summary and skills may span entries.
 - When evidence is absent or a claim/skill has no evidence references, `validate`/`render` issue warnings but allow structurally valid exports. Explicitly report evidence linkage as unavailable/incomplete, never verified.
 - `evaluate` requires evidence, nonempty evidence refs for every claim/skill, a job, and at least one quoted requirement. Missing evaluation prerequisites fail before key lookup or network access.
@@ -245,17 +245,17 @@ Refuse input/output aliasing, including symlink aliases. Stage writes on the des
 
 A plain resolved resume model removes job/evidence metadata and retains selected content. Both serializers consume it. Without `sectionOrder`, source section order is preserved and skills appear immediately after experience, or before the first source section when experience is absent. An explicit `sectionOrder` puts listed IDs first, then appends omitted IDs in the default order; empty sections are ignored. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
 
-Current design (version 2.5.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
+Current design (version 2.6.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
 
-The centered header uses a 19 pt bold uppercase name (2 pt after), optional 12 pt regular headline (3 pt after), 11 pt location/phone/email joined by ` | `, then a separate 11 pt links row. Links remain unbreakable; overflow is split into two balanced link lines, without a one-link orphan. Generic labels and labels matching their link domain display the clean URL without `http://`, `https://`, leading `www.`, or trailing slashes; explicit URL-style labels remain unchanged. A header item without a URL is plain text. Hyperlink targets remain the original URL. The header block ends with 8 pt spacing.
+The centered header uses a 19 pt bold uppercase name (2 pt after), optional 12 pt regular headline (3 pt after), 11 pt location/phone/email joined by ` | `, then a separate 11 pt links row. Links remain unbreakable; overflow is split into two balanced link lines, without a one-link orphan. Generic header labels resolve to compact `Portfolio`, `LinkedIn`, or `GitHub` labels rather than expanded URLs; other authored labels remain unchanged. Linked items show a small local monochrome globe or GitHub vector icon next to visible text; icons are decorative, and links retain the exact original URL target. A header item without a URL is plain text. The header block ends with 8 pt spacing.
 
 Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 12 pt bold uppercase, full-width 0.6 pt black bottom rule, 18 pt before/4 pt after, and kept with the first entry header. Typst uses an explicit strong vertical spacer so paragraph/block spacing cannot collapse; raster inspection and DOCX preview confirm the effective gap exceeds twice the 4 pt entry gap.
 
-PDF section-heading blocks locally set paragraph leading to `0pt` to tighten the title-to-rule gap without changing body leading. `sectionAfterPt` controls spacing below the heading block, not the title-to-rule gap.
+PDF section-heading blocks control local paragraph spacing for the title-to-rule gap without changing body leading. `sectionAfterPt` controls spacing below the heading block.
 
-All entry kinds use one header row: an 11 pt bold heading on the left and dates on the right. Experience and project sections use a three-slot subtitle layout when any entry has location, stack, or URL; experience entries reserve employer, location, and comma-separated stack slots in that order; project entries reserve location, comma-separated stack, and link slots in that order. Omitted or empty slots render without placeholder text or stray delimiter pipes. Project titles remain on their own italic detail line, separate from shared metadata. Other sections retain their existing italic detail line. DOCX uses one native right-aligned tab stop; Typst uses a two-column grid. Dates use English month abbreviations `Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec`. Certifications display `Issued Mon YYYY` and optional `Expires Mon YYYY`, never a range.
+All entry kinds use one header row: an 11 pt bold heading on the left and dates on the right. Experience subtitles contain employer and supplied location only. Projects show compact linked text (`Live` or `GitHub`) with a local icon beside undated headings; dated projects put the link below the heading so it does not compete with the title and dates. Optional project titles and locations remain readable details. Stack stays in the input snapshot but is not printed as a metadata row; authored bullets and selective skills carry useful technologies. Empty details produce no placeholder pipes or blank link-only spacing. Other sections retain their existing italic details. DOCX uses a native right-aligned tab stop; Typst uses a two-column grid. Dates use English month abbreviations; certifications use `Issued` and optional `Expires`.
 
-Summary claims are joined with one space into a single 11 pt paragraph with 3 pt after. Skills use 11 pt text and 2 pt after: one paragraph per category in first-appearance order, with a bold category name followed by comma-separated regular labels; uncategorized skills use bold `Skills:`. Bullets are 10.5 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have a 4 pt inter-entry gap. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst bundles Caladea and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX declares Cambria; exact display remains dependent on recipient font availability. No photo, icons, skill bars, content tables, or floating shapes.
+Summary claims are joined with one space into a single 11 pt paragraph with 3 pt after. Skills use 11 pt text and 2 pt after: one paragraph per category in first-appearance order, with a bold category name followed by comma-separated regular labels; uncategorized skills use bold `Skills:`. Bullets are 10.5 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have a 4 pt inter-entry gap. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst bundles Caladea and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX declares Cambria; exact display remains dependent on recipient font availability. No photo, skill bars, content tables, or floating shapes.
 
 PDF and DOCX must preserve the same wording, section order, links, and visual hierarchy. Exact line wrapping and page-count parity are not acceptance requirements: Word processors and Typst have different layout engines.
 
@@ -270,8 +270,8 @@ PDF and DOCX must preserve the same wording, section order, links, and visual hi
 
 ### DOCX
 
-- Generate a real `.docx` using `Document`, `Paragraph`, `TextRun`, native list numbering, named paragraph styles, and external hyperlinks.
-- Keep resume content in the main document body. Do not fake layout with tables, pictures, or floating text boxes.
+- Generate a real `.docx` using `Document`, `Paragraph`, `TextRun`, `ImageRun` for decorative local SVG link icons, native list numbering, named paragraph styles, and external hyperlinks.
+- Keep resume content in the main document body. Do not fake layout with tables or floating text boxes; the only images are decorative local vector link icons.
 - Use named styles for name/contact/section heading/entry heading/body/bullet so users can edit content and maintain the design.
 - Set requested paper/margins and keep headings with the following paragraph where supported. Allow normal paragraph reflow.
 - No document protection, macros, tracked changes, embedded source evidence, job text, or evaluator metadata in resume content.
@@ -335,34 +335,28 @@ Create files only as their phase needs them; this is not permission to generate 
 │   ├── prd-idea.md
 │   ├── prototype-plan.md
 │   └── research-synthesis.md
-├── src/                         # CLI, schemas, validation/lint, renderers, and tests
-│   ├── cli.ts
-│   ├── schema.ts
-│   ├── validate.ts
-│   ├── lint.ts
-│   ├── lint-terms.ts
-│   ├── io.ts
-│   ├── resume.ts
-│   ├── design.ts
-│   ├── pdf.ts
-│   ├── docx.ts
-│   ├── evaluate.ts
-│   ├── lint.test.ts
-│   ├── lint-fixtures.test.ts
-│   └── skill.test.ts
-├── assets/                      # Add with export implementation
+├── src/
+│   ├── cli.ts                  # CLI entrypoint
+│   ├── application/            # Schema, snapshot I/O, validation, lint
+│   ├── evaluation/             # Optional Jev evaluation
+│   ├── render/                 # PDF and DOCX serializers
+│   └── resume/                 # Resolved resume model and design
+├── tests/                      # Bun tests, separate from runtime modules
+├── assets/                     # Local PDF/DOCX renderer assets
 │   ├── resume.typ
-│   └── fonts/                   # Licensed files and notices
+│   ├── icons/                  # SVG link icons and DOCX PNG fallbacks
+│   └── fonts/                  # Licensed files and notices
 ├── skills/resume-toolkit/
 │   ├── SKILL.md
 │   ├── writing-guide.md
 │   └── references/             # CLI, data conventions, and artifact review
-└── examples/                    # Synthetic fixtures only
+└── examples/                   # Synthetic fixtures only
     ├── application.json
     ├── dense-application.json
     ├── edge-application.json
     ├── lint-bad-application.json
-    └── lint-good-application.json
+    ├── lint-good-application.json
+    └── phase7-render-application.json
 ```
 
 Use plain functions, direct imports, and explicit format dispatch. No generic renderer/evaluator interfaces. Add a few behavior-oriented Bun tests alongside the owning modules when failure modes justify them.
@@ -380,7 +374,7 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 
 ### Implementation progress
 
-Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete. The skill covers tailoring, review/fix, and render-only paths. Local lint warnings do not change validation status/evidence linkage, exit codes, or export eligibility. Optional `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder` retain `schemaVersion: 1`; the renderer is design 2.5.0. Live Jev remains unverified and was not run for this rework.
+Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete. The skill covers tailoring, review/fix, and render-only paths. Local lint warnings do not change validation status/evidence linkage, exit codes, or export eligibility. Optional `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder` retain `schemaVersion: 1`; the renderer is design 2.6.0. Live Jev remains unverified and was not run for this rework.
 
 1. **Completed — Phase 1: contracts, validation, and lint.** Strict Zod schemas, JSON Schema output, one-time input snapshots/hashes, locatable issues, `schema`, `validate`, and warning-only `lint` CLI behavior. Optional schema additions remain version 1. Current verification is recorded below; no live Jev request was made.
 
@@ -388,7 +382,7 @@ Phase 0 remains open only for an authorized live Jev request/cancellation check.
 
 3. **Implemented — Phase 3 local evaluation.** Added the minimized projection, exact offline `--dry-run`, explicit remote consent, one SDK batch using Choice/Noul/Score, a 30-second overall AbortSignal deadline, strict answer validation, and versioned reports. **Local gate:** `bun x tsc --noEmit`, all 29 tests, loopback mock failures, and the actual no-key dry-run CLI path passed. **Remaining live gate:** an explicitly authorized synthetic Jev call with observed model/usage/findings and cancellation; it was not completed.
 
-4. **Implemented — Phase 4 agent workflow and skill.** Added [`skills/resume-toolkit/SKILL.md`](../skills/resume-toolkit/SKILL.md) with schema discovery, ownership/provenance boundaries, exact command/exit-code reference, minimized-payload preview and explicit human consent, at most two automated revision passes, and manual DOCX reconciliation/report boundaries. `src/workflow.test.ts` exercises real CLI schema discovery, a structurally valid overstated v1, dry-run inspection, an explicitly simulated contradicted finding, an immutable-evidence v2 with a distinct byte hash, and both offline exports. It checks full corrected wording with `pdftotext`, DOCX archive integrity/native OOXML paragraphs/lists/styles, and unchanged snapshot bytes. **Local gate:** `bunx tsc --noEmit` and `bun test` pass (30 tests across eight files, zero failures). **Remaining live boundary:** this synthetic report does not satisfy the authorized Jev or real remote-consent exercise in the full prototype gate.
+4. **Implemented — Phase 4 agent workflow and skill.** Added [`skills/resume-toolkit/SKILL.md`](../skills/resume-toolkit/SKILL.md) with schema discovery, ownership/provenance boundaries, exact command/exit-code reference, minimized-payload preview and explicit human consent, at most two automated revision passes, and manual DOCX reconciliation/report boundaries. `tests/workflow.test.ts` exercises real CLI schema discovery, a structurally valid overstated v1, dry-run inspection, an explicitly simulated contradicted finding, an immutable-evidence v2 with a distinct byte hash, and both offline exports. It checks full corrected wording with `pdftotext`, DOCX archive integrity/native OOXML paragraphs/lists/styles, and unchanged snapshot bytes. **Local gate:** `bunx tsc --noEmit` and `bun test` pass (30 tests across eight files, zero failures). **Remaining live boundary:** this synthetic report does not satisfy the authorized Jev or real remote-consent exercise in the full prototype gate.
 
 Do not wait for broad evaluator calibration to use local exports. The complete prototype still requires a real authorized Jev run; fake responses are only controlled failure fixtures, not feature proof.
 
@@ -416,10 +410,11 @@ Use a few realistic support examples plus mutations of magnitude/ownership and m
 
 ## 11. Prerequisites and current verification
 
-The repository contains the Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Source includes strict schemas, snapshot I/O, validation and local lint (`src/lint.ts`, `src/lint-terms.ts`), the shared resolved resume/design, both serializers, evaluation, and focused tests including lint-fixture and skill-contract coverage. The canonical skill and its references live under `skills/resume-toolkit/`; `scripts/setup.sh` copies them to installed locations.
+The repository contains the Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Runtime code is grouped under `src/application/`, `src/evaluation/`, `src/render/`, and `src/resume/`; `src/cli.ts` remains the executable entrypoint. Bun tests live separately in `tests/`. The canonical skill and its references live under `skills/resume-toolkit/`; `scripts/setup.sh` copies them to installed locations.
 
 ### Observed local smoke checks
 
+- Design 2.6.0 review (2026-10-18): `bun x tsc --noEmit` passed; `bun test --timeout 30000` passed all 81 tests across 12 files. The default 5-second deadline interrupted the multi-subprocess CLI help/version test during an earlier run; the longer gate passed without changing runtime or test code deadlines. Real CLI validation/lint reported no issues on the revised general snapshot. PDF/DOCX exports worked from `/tmp`, retained all eight claims and four exact URL targets, and used local SVG icons with DOCX PNG fallbacks. The A4 PDF and Writer-converted DOCX each fit one page; both page images were inspected. This review did not repeat the earlier manual edit/save/reopen exercise or call live Jev.
 - Bun 1.4.2 and Typst 0.15.1 ran on the development Linux x86_64 environment. Typst was installed to `~/.local/bin/typst` from the official `typst-x86_64-unknown-linux-musl` v0.15.1 release; the archive SHA-256 was verified.
 - Carlito, Droid Sans Fallback Full, and Noto Emoji are bundled with their OFL/Apache notices. Design 2.0 rendered both application fixtures as A4 and Letter PDFs with system font discovery disabled. `pdfinfo` confirmed page sizes/counts: compact is one page at both sizes; dense is one A4 page and two Letter pages, with only the skills section on Letter page two. `pdftotext` confirmed selectable content; `pdfinfo -url` confirmed full HTTPS targets; `pdffonts` confirmed embedded Carlito subsets. Page-image review checked centered headers, uppercase ruled sections, right-aligned dates, and the dense page boundary.
 - `docx` 9.10.0 rendered both fixtures at A4 and Letter. OOXML inspection verified 15/16 mm margins, centered header styles, 276-twip line spacing, section rules, right-tab positions at the printable widths (10092 A4 / 10426 Letter), and exactly one native tab run per date row with no tab characters in text runs. LibreOffice Writer edited, saved, and reopened a v2.0 dense A4 DOCX; the `Resume Bullet` style and numbering level 0 remained intact. LibreOffice is verification-only, not a runtime dependency.

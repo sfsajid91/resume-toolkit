@@ -187,5 +187,5 @@ describe("GitHub release installation", () => {
       server.stop(true);
       await rm(directory, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 });

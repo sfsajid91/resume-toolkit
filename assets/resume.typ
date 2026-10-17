@@ -55,7 +55,7 @@
   #grid(
     columns: (1fr, auto),
     column-gutter: 8pt,
-    [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.heading]],
+    [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.heading] #if section.kind == "projects" and entry.dateText == "" and "url" in entry [#h(4pt) #box(link(entry.url)[#box(image("icons/" + entry.urlIcon + ".svg", width: 8pt)) #h(2pt) #text(size: points(design.at("entry-detail-font-pt")), fill: link-color)[#entry.urlLabel]])]],
     align(right)[#if entry.dateText != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateText]]],
   )
   #if section.subtitleSlots [
@@ -75,20 +75,25 @@
         #for (i, (index, slot)) in visible-slots.enumerate() [
           #if i > 0 [ | ]
           #if "url" in entry and slot == entry.urlLabel [
-            #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#slot]]
+            #link(entry.url)[#box(image("icons/" + entry.urlIcon + ".svg", width: 8pt)) #h(2pt) #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#slot]]
           ] else [
             #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]
           ]
         ]
       ]
     ]
-  ] else if entry.detail != "" or ("url" in entry) [
+  ] else if entry.detail != "" or ("url" in entry and section.kind != "projects") [
     #par(spacing: points(design.at("paragraph-after-pt")))[
       #if entry.detail != "" [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]]
-      #if "url" in entry [
+      #if "url" in entry and section.kind != "projects" [
         #if entry.detail != "" [ | ]
-        #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#entry.urlLabel]]
+        #link(entry.url)[#box(image("icons/" + entry.urlIcon + ".svg", width: 8pt)) #h(2pt) #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#entry.urlLabel]]
       ]
+    ]
+  ]
+  #if section.kind == "projects" and entry.dateText != "" and "url" in entry [
+    #par(spacing: points(design.at("paragraph-after-pt")))[
+      #link(entry.url)[#box(image("icons/" + entry.urlIcon + ".svg", width: 8pt)) #h(2pt) #text(size: points(design.at("entry-detail-font-pt")), fill: link-color)[#entry.urlLabel]]
     ]
   ]
 ]
@@ -138,14 +143,17 @@
         #text(size: points(design.at("contact-font-pt")), fill: secondary)[
           #for (index, item) in line.enumerate() [
             #if index > 0 [ | ]
-            #if "url" in item [#box(link(item.url)[#text(fill: link-color)[#item.label]])]
-            #if "url" not in item [#box(item.label)]
+            #if "url" in item [
+              #box(link(item.url)[#box(image("icons/" + item.icon + ".svg", width: 8pt)) #h(2pt) #text(fill: link-color)[#item.label]])
+            ] else [
+              #box(item.label)
+            ]
           ]
         ]
       ]
-      ]
     ]
   ]
+]
 #v(points(design.at("header-after-pt")))
 
   #for section in resume.sections [

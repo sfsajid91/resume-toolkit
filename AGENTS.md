@@ -54,8 +54,9 @@ The package declares the `resume-toolkit` executable in its `bin` field; `bun ru
 ## Important Files
 
 - `package.json`, `bun.lock` — exact dependencies and Bun lockfile; package declares the `resume-toolkit` executable, with no package scripts.
-- `src/lint.ts`, `src/lint-terms.ts` — local resume lint rules and shared vocabulary.
-- `src/lint.test.ts`, `src/lint-fixtures.test.ts`, `src/skill.test.ts` — rule behavior, fixture-code coverage, and skill contract checks.
+- `src/application/` — schema, snapshot I/O, validation, and lint.
+- `src/render/`, `src/resume/`, `src/evaluation/` — export, resolved-content/design, and evaluation modules.
+- `tests/` — Bun behavior tests, kept separate from runtime source.
 - `skills/resume-toolkit/writing-guide.md` and `skills/resume-toolkit/references/` — writing, CLI, data, and artifact-review guidance.
 - `scripts/setup.sh` copies the canonical skill source into agent-specific destinations; edit `skills/resume-toolkit/`, never installed copies.
 - `examples/lint-bad-application.json`, `examples/lint-good-application.json` — synthetic lint/layout fixtures.

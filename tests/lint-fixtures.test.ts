@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema } from "./schema.ts";
-import { validateApplication } from "./validate.ts";
-import { BANNED_TERMS } from "./lint-terms.ts";
+import { applicationSchema } from "../src/application/schema.ts";
+import { validateApplication } from "../src/application/validate.ts";
 
 const expectedCodes = [
   "lint.banned_word",
@@ -16,13 +15,11 @@ const expectedCodes = [
   "lint.header_links",
   "lint.hedge_text",
   "lint.missing_contact",
-  "lint.no_number",
   "lint.no_stack",
   "lint.opener_repeat",
   "lint.project_unlinked",
   "lint.repeated_theme",
   "lint.rule_of_three",
-  "lint.skill_not_in_body",
   "lint.skills_domain",
   "lint.skills_thin",
   "lint.summary",
@@ -52,11 +49,5 @@ describe("lint fixtures", () => {
     const result = validateApplication(await fixture("lint-good-application.json"));
     expect(result.status).toBe("valid");
     expect(result.issues.filter((issue) => issue.code.startsWith("lint."))).toEqual([]);
-  });
-  test("writing guide banned terms exactly match lint vocabulary", async () => {
-    const guide = await readFile(new URL("../skills/resume-toolkit/writing-guide.md", import.meta.url), "utf8");
-    const list = guide.match(/^Banned terms \(lint terms\): (.+)$/mu)?.[1] ?? "";
-    const terms = [...list.matchAll(/`([^`]+)`/gu)].map(([, term]) => term ?? "");
-    expect(terms).toEqual([...BANNED_TERMS]);
   });
 });

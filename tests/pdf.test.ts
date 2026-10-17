@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema } from "./schema.ts";
-import { resolveResume } from "./resume.ts";
-import { exportPdf } from "./pdf.ts";
+import { applicationSchema } from "../src/application/schema.ts";
+import { resolveResume } from "../src/resume/resume.ts";
+import { exportPdf } from "../src/render/pdf.ts";
 
 const execFileAsync = promisify(execFile);
 const inspectionToolsAvailable = ["typst", "pdftotext", "pdfinfo"].every((tool) => Bun.which(tool) !== null);
@@ -63,7 +63,7 @@ describe("PDF export", () => {
           }));
           const nameY = lines.find(({ text: value }) => value === "MORGAN EXAMPLE")?.y;
           const contactY = lines.find(({ text: value }) => value.startsWith("Portland, OR |"))?.y;
-          const linksY = lines.find(({ text: value }) => value === "morgan.example.net | github.com/morgan-example")?.y;
+          const linksY = lines.find(({ text: value }) => value === "Portfolio | GitHub")?.y;
           const headingIndex = lines.findIndex(({ text: value }) => value === "PROFESSIONAL SUMMARY");
           const firstBodyIndex = lines.findIndex(({ text: value }) => value.startsWith("Product-minded"));
           const experienceIndex = lines.findIndex(({ text: value }) => value === "PROFESSIONAL EXPERIENCE");
@@ -101,7 +101,7 @@ describe("PDF export", () => {
           expect(text).not.toContain("PROFESSIONAL EXPERIENCETECHNICAL SKILLS");
           expect(text).not.toContain("TECHNICAL SKILLSSELECTED PROJECTS");
           expect(text).not.toContain("Senior Software EngineerNorthstar Systems");
-          expect(urls).toContain("https://morgan.example.net");
+          expect(text).toContain("Portfolio | GitHub");
         } else {
           expect(text).toContain("RENÉE");
           expect(text).toContain("Café & Co.");
@@ -133,7 +133,7 @@ describe("PDF export", () => {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  test.skipIf(!inspectionToolsAvailable)("renders headline, clean URLs, grouped skills, and a cohesive summary", async () => {
+  test.skipIf(!inspectionToolsAvailable)("renders compact header labels, grouped skills, and a cohesive summary", async () => {
     const application = applicationSchema.parse(JSON.parse(
       await readFile(new URL("../examples/application.json", import.meta.url), "utf8"),
     ) as unknown);
@@ -160,7 +160,7 @@ describe("PDF export", () => {
       ]);
       const normalized = text.replace(/\s+/gu, " ");
       expect(normalized).toContain("Full-Stack Engineer");
-      expect(normalized).toContain("github.com/sfsajid91 | github.com/sfsajid91/issues");
+      expect(normalized).toContain("GitHub | github.com/sfsajid91/issues");
       expect(urls).toContain("https://www.github.com/sfsajid91");
       expect(urls).toContain("https://github.com/sfsajid91/issues");
       expect(text.split(/\r?\n/u).map((line) => line.trim())).toContain("Built dependable APIs. Mentored a team.");
@@ -192,11 +192,9 @@ describe("PDF export", () => {
       const projectHeader = lines.find((line) => line.startsWith(projectTitle));
       if (projectHeader === undefined) throw new Error("Long project title wrapped or disappeared from its header line.");
       expect(projectHeader).toContain("Apr 2019 – Apr 2020");
-      expect(projectHeader).not.toContain("example.org");
-      expect(lines.some((line) => line.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
-      expect(text).toContain("Northstar — Recovery Systems | Portland, OR");
-      expect(text).toContain("Issued Mar 2018 · Expires Mar 2021");
+      expect(lines.some((line) => line.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(false);
       expect(urls).toContain("https://example.org/projects/recovery-readiness-toolkit");
+      expect(text).toContain("Issued Mar 2018 · Expires Mar 2021");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
@@ -219,20 +217,22 @@ describe("PDF export", () => {
           .map(([, word]) => word ?? "")
           .join(" "),
       }));
-      const linkLines = lines.filter(({ text: line }) => /linkedin\.com|research\.example|Open profile/u.test(line));
+      const linkLines = lines.filter(({ text: line }) => /LinkedIn|Research profile|Code samples/u.test(line));
       expect(linkLines).toHaveLength(2);
-      expect(linkLines.map(({ text: line }) => line.split(" | ").length)).toEqual([3, 5]);
+      expect(linkLines.map(({ text: line }) => line.split(" | ").length)).toEqual([4, 4]);
       expect(text).toContain("Open profile");
       expect(urls).not.toContain("Open profile");
       expect(urls).toContain("https://linkedin.com/in/jordan-example/");
-      expect(text).toContain("Sample Research Lab | North Sample | TypeScript, PostgreSQL, Docker");
-      expect(text).toContain("Example Studio | Python, FastAPI");
+      expect(text).toContain("Sample Research Lab | North Sample");
+      expect(text).not.toContain("TypeScript, PostgreSQL, Docker");
+      expect(text).toContain("Example Studio");
       expect(lines.some(({ text: line }) => line === "Personal scheduling application")).toBe(true);
       expect(lines.some(({ text: line }) => line === "Open data explorer")).toBe(true);
       expect(lines.some(({ text: line }) => line === "Accessibility audit helper")).toBe(true);
-      expect(text).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
-      expect(text).toContain("Svelte, MapLibre, Vite");
-      expect(text).toContain("Sample City | tools.example.test/access-check");
+      expect(text).toContain("Remote");
+      expect(text).not.toContain("React, SQLite");
+      expect(text).not.toContain("Svelte, MapLibre, Vite");
+      expect(text).toContain("Sample City");
 
       const headingIndex = lines.findIndex(({ text: line }) => line === "PROFESSIONAL EXPERIENCE");
       const secondEntryIndex = lines.findIndex(({ text: line }) => line.startsWith("Engineering Assistant"));

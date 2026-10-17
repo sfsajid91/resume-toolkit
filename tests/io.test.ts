@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
-import { writeStagedOutput } from "./io.ts";
+import { writeStagedOutput } from "../src/application/io.ts";
 
 async function temporaryDirectory(): Promise<string> {
   return mkdtemp(join(tmpdir(), "resume-toolkit-io-"));

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema, reportSchema, validationOutputSchema, type Report } from "./schema.ts";
+import { applicationSchema, reportSchema, validationOutputSchema, type Report } from "../src/application/schema.ts";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const execFileAsync = promisify(execFile);

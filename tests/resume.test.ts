@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "bun:test";
-import { applicationSchema } from "./schema.ts";
-import { displayUrl, resolveResume } from "./resume.ts";
+import { applicationSchema } from "../src/application/schema.ts";
+import { displayUrl, resolveResume } from "../src/resume/resume.ts";
 async function fixture(path: string) {
   const value: unknown = JSON.parse(await readFile(new URL(path, import.meta.url), "utf8")) as unknown;
   return applicationSchema.parse(value);
@@ -24,9 +24,7 @@ describe("resolved resume", () => {
     expect(experience.entries[0]?.detail).toBe("");
     expect(resolved.summary[0]).toBe(application.resume.summary[0]?.text);
     expect(experience.entries[0]?.bullets[0]).toBe(application.resume.sections[0]?.items[0]?.bullets[0]?.text);
-    expect(resolved.basics.links.map(({ label }) => label)).toEqual([
-      "morgan.example.net", "github.com/morgan-example",
-    ]);
+    expect(resolved.basics.links.map(({ label }) => label)).toEqual(["Portfolio", "GitHub"]);
     expect(resolved.basics.links.map(({ url }) => url)).toEqual([
       "https://morgan.example.net", "https://github.com/morgan-example",
     ]);
@@ -55,14 +53,6 @@ describe("resolved resume", () => {
       { category: "Languages", labels: ["Bun", "SQL"] },
       { category: "Frontend", labels: ["React"] },
     ]);
-    expect(resolved.basics.links[0]).toEqual({
-      label: "github.com/sfsajid91",
-      url: "https://github.com/sfsajid91",
-    });
-    expect(resolved.basics.links[1]).toEqual({
-      label: "github.com/sfsajid91",
-      url: "https://www.github.com/sfsajid91",
-    });
     expect(resolved.sections.findIndex(({ kind }) => kind === "skills")).toBe(
       resolved.sections.findIndex(({ kind }) => kind === "experience") + 1,
     );
@@ -102,32 +92,43 @@ describe("optional rendering fields", () => {
     expect(resolveResume(application).sections[1]?.kind).toBe("skills");
   });
 
-  test("normalizes display URLs and preserves labeled links without URLs", async () => {
+  test("preserves explicit header labels and maps generic labels to compact names", async () => {
     const application = await fixture("../examples/application.json");
     expect(displayUrl("https://x.vercel.app/")).toBe("x.vercel.app");
-    expect(displayUrl("https://linkedin.com/in/u/")).toBe("linkedin.com/in/u");
-    application.resume.basics.links.push({ label: "Contact page" });
-    expect(resolveResume(application).basics.links.at(-1)).toEqual({ label: "Contact page" });
+    application.resume.basics.links = [
+      { label: "Website", url: "https://portfolio.example.test" },
+      { label: "GitHub", url: "https://github.com/person" },
+      { label: "LinkedIn", url: "https://linkedin.com/in/person" },
+      { label: "Research profile", url: "https://research.example.test/profile" },
+      { label: "Contact page" },
+    ];
+    expect(resolveResume(application).basics.links).toEqual([
+      { label: "Portfolio", url: "https://portfolio.example.test", icon: "globe" },
+      { label: "GitHub", url: "https://github.com/person", icon: "github" },
+      { label: "LinkedIn", url: "https://linkedin.com/in/person", icon: "globe" },
+      { label: "Research profile", url: "https://research.example.test/profile", icon: "globe" },
+      { label: "Contact page" },
+    ]);
   });
 
-  test("uses section-wide subtitle slots for location, stack, and links", async () => {
+  test("keeps stack out of experience and project subtitle metadata", async () => {
     const application = await fixture("../examples/phase7-render-application.json");
-    const experience = resolveResume(application).sections.find(({ kind }) => kind === "experience");
-    const projects = resolveResume(application).sections.find(({ kind }) => kind === "projects");
+    const resolved = resolveResume(application);
+    const experience = resolved.sections.find(({ kind }) => kind === "experience");
+    const projects = resolved.sections.find(({ kind }) => kind === "projects");
     if (experience === undefined || experience.kind === "skills" || experience.kind === "summary"
       || projects === undefined || projects.kind === "skills" || projects.kind === "summary") {
       throw new Error("Phase 7 fixture is missing expected sections.");
     }
-    expect(experience.subtitleSlots).toBe(true);
     expect(experience.entries.map(({ subtitle }) => subtitle)).toEqual([
-      ["Sample Research Lab", "North Sample", "TypeScript, PostgreSQL, Docker"],
-      ["Example Studio", "", "Python, FastAPI"],
+      ["Sample Research Lab", "North Sample", ""],
+      ["Example Studio", "", ""],
       ["Community Workshop", "West Example", ""],
     ]);
     expect(projects.entries.map(({ subtitle }) => subtitle)).toEqual([
-      ["Remote", "React, SQLite", "projects.example.test/orbit-planner"],
-      ["", "Svelte, MapLibre, Vite", ""],
-      ["Sample City", "", "tools.example.test/access-check"],
+      ["Remote", "", ""],
+      ["", "", ""],
+      ["Sample City", "", ""],
     ]);
     expect(experience.entries.map(({ detail }) => detail)).toEqual(["", "", ""]);
     expect(projects.entries.map(({ detail }) => detail)).toEqual([
@@ -135,6 +136,20 @@ describe("optional rendering fields", () => {
       "Open data explorer",
       "Accessibility audit helper",
     ]);
+    expect(projects.entries.map(({ urlLabel, urlIcon }) => [urlLabel, urlIcon])).toEqual([
+      ["Live", "globe"],
+      [undefined, undefined],
+      ["Live", "globe"],
+    ]);
+    const projectSection = application.resume.sections.find(({ kind }) => kind === "projects");
+    if (projectSection === undefined || projectSection.items[0] === undefined) throw new Error("Phase 7 fixture is missing a project.");
+    projectSection.items[0].url = "https://github.com/example/orbit";
+    const githubProjects = resolveResume(application).sections.find(({ kind }) => kind === "projects");
+    if (githubProjects === undefined || githubProjects.kind === "skills" || githubProjects.kind === "summary") {
+      throw new Error("Phase 7 resolved project section is missing.");
+    }
+    expect(githubProjects.entries[0]?.urlLabel).toBe("GitHub");
+    expect(githubProjects.entries[0]?.urlIcon).toBe("github");
   });
 
   test("renders location and certification issue/expiry dates", async () => {

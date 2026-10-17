@@ -1,7 +1,7 @@
 export type PaperSize = "a4" | "letter";
 
 // Version tag included in PDF metadata and design-related output.
-export const DESIGN_VERSION = "2.5.0";
+export const DESIGN_VERSION = "2.6.0";
 export const DESIGN = {
 	// DOCX-facing font name.
 	fontFamily: "Cambria",
