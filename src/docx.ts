@@ -46,7 +46,7 @@ function text(value: string, options: RunOptions = {}): TextRun {
 function hyperlink(url: string, label: string, options: RunOptions = {}, noBreak = false): ExternalHyperlink {
   return new ExternalHyperlink({
     link: url,
-    children: [text(noBreak ? label.split("").join("\u2060") : label, { ...options, color: DESIGN.colors.primary })],
+    children: [text(noBreak ? label.split("").join("\u2060") : label, { ...options, color: DESIGN.colors.link })],
   });
 }
 
@@ -75,7 +75,7 @@ function sectionHeading(value: string): Paragraph {
     border: {
       bottom: {
         color: DESIGN.colors.primary.slice(1),
-        space: 1,
+        space: DESIGN.sectionRuleGapPt,
         style: "single",
         size: Math.round(DESIGN.sectionRulePt * 8),
       },
@@ -166,13 +166,14 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
         : [text(entry.dateText, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false })];
       const detailRuns: (TextRun | ExternalHyperlink)[] = [];
       if (section.subtitleSlots) {
-        for (const [index, slot] of entry.subtitle.entries()) {
-          if (index > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
-          if (slot !== "") {
-            detailRuns.push(index === 2 && entry.url !== undefined
-              ? hyperlink(entry.url, slot, { sizePt: DESIGN.entryDetailFontPt, italic: true }, true)
-              : text(slot, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
-          }
+        const visibleSlots = entry.subtitle
+          .map((slot, index) => ({ slot, index }))
+          .filter(({ slot }) => slot !== "");
+        for (const [i, { slot }] of visibleSlots.entries()) {
+          if (i > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+          detailRuns.push(entry.url !== undefined && slot === entry.urlLabel
+            ? hyperlink(entry.url, slot, { sizePt: DESIGN.entryDetailFontPt, italic: true }, true)
+            : text(slot, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
         }
       } else {
         if (entry.detail !== "") {
@@ -187,14 +188,14 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
         [text(entry.heading, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
         dateRun,
         printableWidthTwips,
-        { keepNext: section.subtitleSlots || detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
+        { keepNext: detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
       ));
       if (section.subtitleSlots && entry.detail !== "") {
         children.push(paragraph([
           text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }),
         ], "ResumeEntryDetail", { keepNext: true }));
       }
-      if (section.subtitleSlots || detailRuns.length > 0) {
+      if (detailRuns.length > 0) {
         children.push(paragraph(detailRuns, "ResumeEntryDetail", { keepNext: entry.bullets.length > 0 }));
       }
 

@@ -4,6 +4,8 @@
 #let millimeters(value) = float(value) * 1mm
 #let primary = rgb(design.at("primary-color"))
 #let secondary = rgb(design.at("secondary-color"))
+#let link-color = rgb(design.at("link-color"))
+#show link: set text(fill: link-color)
 #set document(
   title: resume.basics.name,
   author: "Resume Toolkit",
@@ -45,10 +47,11 @@
   below: points(design.at("section-after-pt")),
   sticky: true,
 )[
+  #set par(spacing: points(design.at("section-rule-gap-pt")))
   #text(size: points(design.at("section-heading-font-pt")), weight: "bold", fill: primary)[#value]
   #line(length: 100%, stroke: points(design.at("section-rule-pt")) + primary)
 ]
-#let entry-header(entry, section) = block(sticky: true)[
+#let entry-header(entry, section) = block(width: 100%, sticky: true)[
   #grid(
     columns: (1fr, auto),
     column-gutter: 8pt,
@@ -61,12 +64,21 @@
         #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]
       ]
     ]
-    #par(spacing: points(design.at("paragraph-after-pt")))[
-      #for (index, slot) in entry.subtitle.enumerate() [
-        #if index > 0 [ | ]
-        #if slot != "" [
-          #if index == 2 and "url" in entry [#link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]]]
-          #if not (index == 2 and "url" in entry) [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]]
+    #let visible-slots = ()
+    #for (index, slot) in entry.subtitle.enumerate() [
+      #if slot != "" [
+        #visible-slots.push((index, slot))
+      ]
+    ]
+    #if visible-slots.len() > 0 [
+      #par(spacing: points(design.at("paragraph-after-pt")))[
+        #for (i, (index, slot)) in visible-slots.enumerate() [
+          #if i > 0 [ | ]
+          #if "url" in entry and slot == entry.urlLabel [
+            #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#slot]]
+          ] else [
+            #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]
+          ]
         ]
       ]
     ]
@@ -75,7 +87,7 @@
       #if entry.detail != "" [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]]
       #if "url" in entry [
         #if entry.detail != "" [ | ]
-        #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.urlLabel]]
+        #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: link-color)[#entry.urlLabel]]
       ]
     ]
   ]
@@ -126,7 +138,7 @@
         #text(size: points(design.at("contact-font-pt")), fill: secondary)[
           #for (index, item) in line.enumerate() [
             #if index > 0 [ | ]
-            #if "url" in item [#box(link(item.url)[#item.label])]
+            #if "url" in item [#box(link(item.url)[#text(fill: link-color)[#item.label]])]
             #if "url" not in item [#box(item.label)]
           ]
         ]
@@ -145,7 +157,7 @@
       #for (group-index, group) in resume.skills.enumerate() [
         #if group-index == 0 [
           #v(points(design.at("section-before-pt")))
-          #block(sticky: true)[
+          #block(width: 100%, sticky: true)[
             #section-heading(section.title)
             #skill-line(group)
           ]
@@ -157,13 +169,13 @@
       #for (entry-index, entry) in section.entries.enumerate() [
       #if entry-index == 0 [
         #v(points(design.at("section-before-pt")))
-        #block(sticky: true)[
+        #block(width: 100%, sticky: true)[
           #section-heading(section.title)
           #entry-header(entry, section)
         ]
       ] else [
         #v(points(design.at("entry-after-pt")))
-          #entry-header(entry, section)
+        #entry-header(entry, section)
       ]
       #if entry.bullets.len() > 0 [
         #list(

@@ -120,9 +120,9 @@ describe("optional rendering fields", () => {
     }
     expect(experience.subtitleSlots).toBe(true);
     expect(experience.entries.map(({ subtitle }) => subtitle)).toEqual([
-      ["North Sample", "TypeScript, PostgreSQL, Docker", "Sample Research Lab"],
-      ["", "Python, FastAPI", "Example Studio"],
-      ["West Example", "", "Community Workshop"],
+      ["Sample Research Lab", "North Sample", "TypeScript, PostgreSQL, Docker"],
+      ["Example Studio", "", "Python, FastAPI"],
+      ["Community Workshop", "West Example", ""],
     ]);
     expect(projects.entries.map(({ subtitle }) => subtitle)).toEqual([
       ["Remote", "React, SQLite", "projects.example.test/orbit-planner"],
@@ -143,7 +143,7 @@ describe("optional rendering fields", () => {
     const experience = resolveResume(application).sections.find((section) => section.kind === "experience");
     if (experience === undefined || experience.kind === "skills" || experience.kind === "summary") throw new Error("Missing experience section.");
     expect(experience.entries[0]?.urlLabel).toBe("Northstar Systems");
-    expect(experience.entries[0]?.subtitle[0]).toBe("Seattle, WA");
+    expect(experience.entries[0]?.subtitle[1]).toBe("Seattle, WA");
 
     const certificationSection = application.resume.sections.find((section) => section.kind === "certifications");
     if (certificationSection === undefined) throw new Error("Missing certification section.");

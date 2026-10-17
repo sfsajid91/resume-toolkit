@@ -153,9 +153,11 @@ export function resolveResume(application: Application): ResolvedResume {
           dateText,
           detail,
           subtitle: [
-            location ?? "",
-            stack?.join(", ") ?? "",
-            section.kind === "experience" ? name : url === undefined ? "" : displayUrl(url),
+            section.kind === "experience" && title !== undefined ? name : location ?? "",
+            section.kind === "experience" && title !== undefined ? (location ?? "") : (stack?.join(", ") ?? ""),
+            section.kind === "experience" && title !== undefined
+              ? (stack?.join(", ") ?? "")
+              : url === undefined ? "" : displayUrl(url),
           ] as const,
           ...(url === undefined ? {} : {
             url,

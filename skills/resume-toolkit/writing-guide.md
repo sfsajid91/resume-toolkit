@@ -62,14 +62,14 @@ Before writing, make a compact working table: exact requirement quote, required/
 
 ### Summary, skills, dates, and credentials
 
-- Keep the summary empty unless it adds useful orientation. If included, use one or two evidence-backed claims, one concrete evidenced result, and a years claim that agrees with the earliest start date.
-- Use **3–5 skill category lines** with **5–8 items per category**. Use real tools and technologies, not broad domains such as “developer platforms.” Every skill implied by two or more bullets must appear in skills. Place skills after the summary for engineering roles.
+- For engineering roles, include a concise 1–2 claim professional summary that acts as a technical elevator pitch: state core engineering specialization, primary languages/frameworks, and key technical domains. Ground every claim in confirmed evidence and concrete tools. Avoid empty buzzwords, generic adjectives, and self-praise. A years-of-experience claim must match the earliest supported start date.
+- Use **3–5 skill category lines** with **5–8 items per category**. Use real tools and technologies, not broad domains such as “developer platforms.” Every skill implied by two or more bullets must appear in skills. Place skills after the summary for engineering roles using `resume.sectionOrder: ["summary", "skills", "experience", "projects", "education"]`.
 - Keep dates consistent in display as `Mon YYYY`; snapshot dates use `YYYY-MM`, and null end dates display as `Present`.
 - Certifications show `Issued Mon YYYY` or `Expires Mon YYYY`, never a date range. Drop expired certifications unless relevant.
 - State in-progress education explicitly in the entry's title; add a confirmed expected completion date there, for example `MSc Computing (in progress, expected Jun 2027)`. Do not create a short date-only bullet or pad it to meet bullet-length guidance. Do not put a future expected date in `end` as though the credential were awarded; use `end: null` for ongoing education. Do not list an in-progress certification as held or use an expected date as its issue date.
 - Use actual project participation dates, not automatically the enclosing employment dates. Keep overlapping roles and gaps truthful; never shorten dates or describe a gap as deliberate training without confirmation.
 - Omit education dates only when the education is more than 10 years old and the user agrees.
-- Include the user's supplied location in the location field; never infer one. Choose section order with the section-order option when available.
+- Include the user's supplied location in the location field; never infer one. In experience entries, the organization/employer is positioned first, followed by location and stack (`Company | Location | Stack`). In projects, empty slots are omitted without stray delimiter pipes. Choose section order with `resume.sectionOrder`.
 
 ### Banned language and patterns
 

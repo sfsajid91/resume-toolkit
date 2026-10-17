@@ -76,7 +76,7 @@ describe("PDF export", () => {
           }
           expect(contactY! - nameY!).toBeGreaterThanOrEqual(24);
           expect(linksY! - contactY!).toBeGreaterThanOrEqual(10);
-          expect(firstBodyY! - headingY!).toBeGreaterThanOrEqual(20);
+          expect(firstBodyY! - headingY!).toBeGreaterThanOrEqual(14);
           expect(experienceIndex).toBeGreaterThan(-1);
           expect(experienceIndex).toBeLessThan(skillsIndex);
           expect(skillsIndex).toBeLessThan(projectsIndex);
@@ -194,7 +194,7 @@ describe("PDF export", () => {
       expect(projectHeader).toContain("Apr 2019 – Apr 2020");
       expect(projectHeader).not.toContain("example.org");
       expect(lines.some((line) => line.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
-      expect(text).toContain("Portland, OR | | Northstar — Recovery Systems");
+      expect(text).toContain("Northstar — Recovery Systems | Portland, OR");
       expect(text).toContain("Issued Mar 2018 · Expires Mar 2021");
       expect(urls).toContain("https://example.org/projects/recovery-readiness-toolkit");
     } finally {
@@ -225,14 +225,14 @@ describe("PDF export", () => {
       expect(text).toContain("Open profile");
       expect(urls).not.toContain("Open profile");
       expect(urls).toContain("https://linkedin.com/in/jordan-example/");
-      expect(text).toContain("North Sample | TypeScript, PostgreSQL, Docker | Sample Research Lab");
-      expect(text).toContain("| Python, FastAPI | Example Studio");
+      expect(text).toContain("Sample Research Lab | North Sample | TypeScript, PostgreSQL, Docker");
+      expect(text).toContain("Example Studio | Python, FastAPI");
       expect(lines.some(({ text: line }) => line === "Personal scheduling application")).toBe(true);
       expect(lines.some(({ text: line }) => line === "Open data explorer")).toBe(true);
       expect(lines.some(({ text: line }) => line === "Accessibility audit helper")).toBe(true);
       expect(text).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
-      expect(text).toContain("| Svelte, MapLibre, Vite |");
-      expect(text).toContain("Sample City | | tools.example.test/access-check");
+      expect(text).toContain("Svelte, MapLibre, Vite");
+      expect(text).toContain("Sample City | tools.example.test/access-check");
 
       const headingIndex = lines.findIndex(({ text: line }) => line === "PROFESSIONAL EXPERIENCE");
       const secondEntryIndex = lines.findIndex(({ text: line }) => line.startsWith("Engineering Assistant"));

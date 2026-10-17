@@ -224,7 +224,7 @@ describe("editable DOCX export", () => {
       expect(projectHeader).not.toContain("example.org");
       expect(paragraphs.some((value) => value.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
       expect(paragraphs.some((value) =>
-        value.replace(/\s+/gu, " ") === "Portland, OR | | Northstar — Recovery Systems",
+        value.replace(/\s+/gu, " ") === "Northstar — Recovery Systems | Portland, OR",
       )).toBe(true);
       expect(paragraphs.some((value) => value.includes("Issued Mar 2018 · Expires Mar 2021"))).toBe(true);
       const headingStyle = paragraphStyle(styles, "ResumeSectionHeading");
@@ -251,15 +251,16 @@ describe("editable DOCX export", () => {
       expect(linkParagraphs.map((value) => value.split(" | ").length)).toEqual([3, 5]);
       expect(relationships).toContain("https://linkedin.com/in/jordan-example/");
       expect(relationships).not.toContain("Open profile");
-      expect(paragraphs).toContain("North Sample | TypeScript, PostgreSQL, Docker | Sample Research Lab");
-      expect(paragraphs).toContain("| Python, FastAPI | Example Studio");
+      expect(paragraphs).toContain("Sample Research Lab | North Sample | TypeScript, PostgreSQL, Docker");
+      expect(paragraphs).toContain("Example Studio | Python, FastAPI");
+      expect(paragraphs).toContain("Community Workshop | West Example");
       expect(paragraphs).toContain("Personal scheduling application");
       expect(paragraphs).toContain("Open data explorer");
       expect(paragraphs).toContain("Accessibility audit helper");
       expect(paragraphs).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
-      expect(paragraphs).toContain("| Svelte, MapLibre, Vite |");
+      expect(paragraphs).toContain("Svelte, MapLibre, Vite");
       expect(paragraphs.some((value) =>
-        value.replace(/\s+/gu, " ") === "Sample City | | tools.example.test/access-check",
+        value.replace(/\s+/gu, " ") === "Sample City | tools.example.test/access-check",
       )).toBe(true);
       expect(paragraphStyle(styles, "ResumeSectionHeading")).toContain('w:before="360"');
     } finally {
