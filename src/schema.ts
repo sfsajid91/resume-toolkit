@@ -14,7 +14,7 @@ export const claimSchema = z.strictObject({
   evidenceIds: z.array(idSchema),
 });
 
-const entrySchema = z.strictObject({
+const entryFields = {
   id: idSchema,
   name: nonBlankString,
   title: nonBlankString.optional(),
@@ -25,12 +25,17 @@ const entrySchema = z.strictObject({
   expires: nonBlankString.optional(),
   url: nonBlankString.optional(),
   bullets: z.array(claimSchema).max(100),
-});
+};
 
-const sectionSchema = z.strictObject({
-  kind: z.enum(["experience", "projects", "education", "certifications"]),
-  items: z.array(entrySchema).max(100),
-});
+const entrySchema = z.strictObject(entryFields);
+const stackEntrySchema = z.strictObject({ ...entryFields, stack: z.array(nonBlankString).optional() });
+
+const sectionSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("experience"), items: z.array(stackEntrySchema).max(100) }),
+  z.strictObject({ kind: z.literal("projects"), items: z.array(stackEntrySchema).max(100) }),
+  z.strictObject({ kind: z.literal("education"), items: z.array(entrySchema).max(100) }),
+  z.strictObject({ kind: z.literal("certifications"), items: z.array(entrySchema).max(100) }),
+]);
 
 const evidenceSchema = z.strictObject({
   id: idSchema,
@@ -70,7 +75,7 @@ const applicationShapeSchema = z.strictObject({
       email: nonBlankString.optional(),
       phone: nonBlankString.optional(),
       location: nonBlankString.optional(),
-      links: z.array(z.strictObject({ label: nonBlankString, url: nonBlankString })),
+      links: z.array(z.strictObject({ label: nonBlankString, url: nonBlankString.optional() })),
     }),
     summary: z.array(claimSchema).max(100),
     sections: z.array(sectionSchema).max(4),
@@ -80,13 +85,22 @@ const applicationShapeSchema = z.strictObject({
       category: nonBlankString.optional(),
       evidenceIds: z.array(idSchema),
     })).max(100),
-    skillsPosition: z.enum(["after-summary", "after-experience", "end"]).optional(),
+    sectionOrder: z.array(z.enum(["summary", "skills", "experience", "projects", "education", "certifications"])).optional(),
   }),
   evidence: z.array(evidenceSchema).max(1_000).optional(),
   job: jobSchema.optional(),
 });
 
 export const applicationSchema = applicationShapeSchema.superRefine((application, context) => {
+  const { sectionOrder } = application.resume;
+  if (sectionOrder !== undefined && new Set(sectionOrder).size !== sectionOrder.length) {
+    context.addIssue({
+      code: "custom",
+      path: ["resume", "sectionOrder"],
+      message: "Section order IDs must be unique.",
+    });
+  }
+
   const entries = application.resume.sections.reduce((total, section) => total + section.items.length, 0);
   if (entries > 100) {
     context.addIssue({

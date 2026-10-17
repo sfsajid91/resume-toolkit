@@ -22,6 +22,22 @@ Apply these rules when drafting or revising summaries, bullets, dates, skills, a
 - Never force “by doing” or “while” tails. Avoid generic filler and “without X” tails unless the contrast is material, factual, and necessary.
 - Never use em dashes; do not use en dashes outside date ranges. Avoid decorative punctuation and formulaic tails. Use ordinary hyphens only when required by a proper name or compound term.
 
+### No hedging in resume text
+
+- If a fact is uncertain, ask once, then write the confirmed fact plainly or omit. Never put confirmation status, `no handover`, `prototype`, or effort qualifiers in a bullet. Caveats belong in the conversation or evidence, not resume text.
+
+### Describe the work, not the transaction
+
+- Focus on technical implementation and outcomes rather than commercial transactions or marketplace platforms. Avoid phrasing centered on `paid`, `delivery`, `delivered through`, or platform names in bullet claims.
+
+### Freelancers
+
+- List work as experience (title, `Freelance`, date range), with 3–5 bullets for strongest builds; platform names belong in that entry, not header.
+
+### Project selection
+
+- Choose three projects with strongest stack depth and outcome, prefer client/user-facing linked projects.
+
 ### Summary, skills, dates, and credentials
 
 - Keep the summary empty unless it adds useful orientation. If included, use one or two evidence-backed claims, one concrete evidenced result, and a years claim that agrees with the earliest start date.
@@ -38,6 +54,14 @@ Avoid all listed terms and phrases case-insensitively, including obvious tense, 
 Banned terms (lint terms): `spearhead`, `spearheads`, `spearheaded`, `spearheading`, `orchestrate`, `orchestrates`, `orchestrated`, `orchestrating`, `leverage`, `leverages`, `leveraged`, `leveraging`, `utilize`, `utilizes`, `utilized`, `utilizing`, `catalyze`, `catalyzes`, `catalyzed`, `catalyzing`, `synergize`, `synergizes`, `synergized`, `synergizing`, `revolutionize`, `revolutionizes`, `revolutionized`, `revolutionizing`, `pioneer`, `pioneers`, `pioneered`, `pioneering`, `champion`, `champions`, `championed`, `championing`, `foster`, `fosters`, `fostered`, `fostering`, `delve`, `delves`, `delved`, `delving`, `harness`, `harnesses`, `harnessed`, `harnessing`, `empower`, `empowers`, `empowered`, `empowering`, `elevate`, `elevates`, `elevated`, `elevating`, `unveil`, `unveils`, `unveiled`, `unveiling`, `seamless`, `seamlessly`, `robust`, `robustly`, `robustness`, `cutting-edge`, `cutting edge`, `state-of-the-art`, `state of the art`, `dynamic`, `dynamically`, `results-driven`, `result-driven`, `results driven`, `result driven`, `passionate`, `passionately`, `detail-oriented`, `detail oriented`, `team player`, `team players`, `thought leader`, `thought leaders`, `fast-paced`, `fast paced`, `paradigm-shifting`, `paradigm shifting`, `responsible for`, `duties included`, `worked on`, `helped with`, `assisted in`, `enhancing operational efficiency`, `driving business growth`, `ensuring seamless user experience`, `proven track record`, `proven track records`, `small`, `smaller`, `smallest`, `dependable`, `dependably`, `dependability`, `product-minded`, `product minded`, `significantly improved performance`, `significantly improves performance`, `significantly improving performance`.
 
 Limit trailing “without …” clauses to one per resume and rule-of-three lists to two per resume. Avoid weak openers “Partnered with,” “Collaborated with,” “Worked with,” “Coordinated,” and “Contributed to” unless they name the true scope. Also avoid repetitive sentence openings, inflated unmeasured impact, unsubstantiated disclaimers, dangling fluff tails, and generic claims with no candidate-specific detail. Lint's clean result does not imply Jev clarity or relevance 2/2.
+### Gaps to ask the user about
+
+Review inputs against this checklist once before rewriting, and ask missing items in a single message:
+- **Missing contact:** basics has neither email nor phone.
+- **Freelance work not listed:** marketplace header link present without corresponding experience entry.
+- **One-bullet roles:** roles lacking sufficient accomplishment depth.
+- **Projects without stack or link:** project entries missing both URL and technical stack.
+- **Skills missing tools used in bullets:** technologies mentioned multiple times in bullets but absent from skills.
 
 ### Final review
 
@@ -64,5 +88,6 @@ Synthetic summary examples:
 | “Led a complete platform migration that transformed deployment.” | Candidate migrated the billing worker with two teammates; the team shipped it to production. No leadership role was recorded. | Migrated the billing worker with two teammates and shipped it to production as a team. |
 | “Reduced nightly import failures by adding retries, without any data loss.” | Candidate added bounded retries to the nightly import; the failure count fell from 20 to 4 per week. No data-loss comparison was recorded. | Added bounded retries to the nightly import, reducing recorded failures from 20 to 4 per week. |
 | “Worked on the search service and improved its performance.” | Candidate replaced a per-result lookup with one batched query in the search service; the query path now makes one database request. | Replaced per-result lookups with one batched query, reducing the search service's database request path to one call. |
+| “Completed a paid delivery through Fiverr” | Candidate built a telemetry pipeline using TypeScript and Redis. | Built X using A and B that does Y |
 
 The examples demonstrate concise claims, evidence-bounded outcomes, attribution, and direct openings. Do not copy their facts into a resume.

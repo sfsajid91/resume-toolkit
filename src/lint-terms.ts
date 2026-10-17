@@ -29,5 +29,9 @@ export const TECHNOLOGY_TERMS = [
 ] as const;
 
 export const DOMAIN_LIKE_SKILL_LABELS = [
-  "developer platforms", "platforms", "tools", "technologies", "software", "miscellaneous",
+  "platforms", "tools", "technologies", "software", "miscellaneous",
+] as const;
+
+export const SKILLS_DOMAIN_LABELS = [
+  "APIs", "data/workflow automation", "web scraping", "developer platforms",
 ] as const;

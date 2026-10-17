@@ -12,7 +12,7 @@ description: >-
 Choose A for a job-targeted resume, B for an existing file to fix without a job, and C when the user supplies a finished snapshot only for export.
 
 - **A — Tailor to a job:** use confirmed evidence, optional Jev evaluation, and the remote-consent safeguards below. Evidence IDs on claims and skills and exact nonempty requirement quotes from `job.rawText` are mandatory for evaluation.
-- **B — Review or fix an existing resume:** no job or Jev. Extract facts from supplied files with available tools, confirm uncertain facts, build a snapshot, validate and lint, fix every `lint.*` warning, render, inspect artifacts, and report changes. Link confirmed facts to evidence where possible; evidence is not a blocker.
+- **B — Review or fix an existing resume:** no job or Jev. Extract facts from supplied files with available tools, confirm uncertain facts, build a snapshot, run the gaps checklist and lint, ask missing items exactly once in one message only if gaps exist before rewriting, fix every `lint.*` warning, render, inspect artifacts, and report changes. Link confirmed facts to evidence where possible; evidence is not a blocker.
 - **C — Render only:** use the supplied snapshot, validate it, then render and inspect artifacts.
 
 Use `resume-toolkit` when installed. `bun run src/cli.ts` is only for development inside the repository; do not install from the repository as a user workflow. Read [CLI reference](references/cli.md) when invoking commands or interpreting flags/exit codes. Read [data conventions](references/data-conventions.md) when creating or editing snapshots. Read [artifact review](references/artifact-review.md) after every render.
@@ -31,6 +31,8 @@ Read [the writing guide](writing-guide.md) before drafting or revising summary c
 ## 3. Validate and lint
 
 Run `resume-toolkit validate --input <snapshot.json> --json`. Fix validation errors; warnings do not block rendering. In modes A and B, run `resume-toolkit lint --input <snapshot.json> --json`, fix every lint finding, and rerun until clean. In mode C, lint warnings may be reported but do not block rendering. Clean lint does not imply Jev 2/2.
+
+**3b. Review mode checklist:** In mode B, after snapshot creation and before rendering, run the writing-guide gaps checklist and lint. If factual gaps exist, ask the user exactly once in a single message before rewriting; if none, proceed. Never guess or hedge in resume text. Once answered, resolve findings and rerun until clean.
 
 **Checkpoint:** Stop on validation errors. In modes A and B, stop until lint is clean; in mode C, continue past warnings.
 

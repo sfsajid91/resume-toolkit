@@ -148,7 +148,7 @@ describe("PDF export", () => {
     ];
     application.resume.skills[0]!.category = "Languages";
     application.resume.skills.push({ id: "skill-react", label: "React", category: "Frontend", evidenceIds: [] });
-    application.resume.skillsPosition = "after-summary";
+    application.resume.sectionOrder = ["skills", "summary"];
     const resume = resolveResume(application);
     const directory = await mkdtemp(join(tmpdir(), "resume-pdf-options-test-"));
     const outputPath = join(directory, "resume.pdf");
@@ -194,9 +194,60 @@ describe("PDF export", () => {
       expect(projectHeader).toContain("Apr 2019 – Apr 2020");
       expect(projectHeader).not.toContain("example.org");
       expect(lines.some((line) => line.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
-      expect(text).toContain("Northstar — Recovery Systems, Portland, OR");
+      expect(text).toContain("Portland, OR | | Northstar — Recovery Systems");
       expect(text).toContain("Issued Mar 2018 · Expires Mar 2021");
       expect(urls).toContain("https://example.org/projects/recovery-readiness-toolkit");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+  test.skipIf(!inspectionToolsAvailable)("renders Phase 7 header grouping and shared subtitle slots", async () => {
+    const resume = await fixture("phase7-render-application.json");
+    const directory = await mkdtemp(join(tmpdir(), "resume-phase7-layout-test-"));
+    const outputPath = join(directory, "phase7.pdf");
+    try {
+      await exportPdf(resume, { outputPath, paper: "a4", force: false });
+      const [text, bbox, urls] = await Promise.all([
+        command("pdftotext", [outputPath, "-"]),
+        command("pdftotext", ["-bbox-layout", outputPath, "-"]),
+        command("pdfinfo", ["-url", outputPath]),
+      ]);
+      const lines = [...bbox.matchAll(/<line\b([^>]*)>([\s\S]*?)<\/line>/gu)].map(([, attributes, content]) => ({
+        y: Number(attributes?.match(/\byMin="([0-9.]+)"/u)?.[1]),
+        yMax: Number(attributes?.match(/\byMax="([0-9.]+)"/u)?.[1]),
+        text: [...(content ?? "").matchAll(/<word\b[^>]*>([\s\S]*?)<\/word>/gu)]
+          .map(([, word]) => word ?? "")
+          .join(" "),
+      }));
+      const linkLines = lines.filter(({ text: line }) => /linkedin\.com|research\.example|Open profile/u.test(line));
+      expect(linkLines).toHaveLength(2);
+      expect(linkLines.map(({ text: line }) => line.split(" | ").length)).toEqual([3, 5]);
+      expect(text).toContain("Open profile");
+      expect(urls).not.toContain("Open profile");
+      expect(urls).toContain("https://linkedin.com/in/jordan-example/");
+      expect(text).toContain("North Sample | TypeScript, PostgreSQL, Docker | Sample Research Lab");
+      expect(text).toContain("| Python, FastAPI | Example Studio");
+      expect(lines.some(({ text: line }) => line === "Personal scheduling application")).toBe(true);
+      expect(lines.some(({ text: line }) => line === "Open data explorer")).toBe(true);
+      expect(lines.some(({ text: line }) => line === "Accessibility audit helper")).toBe(true);
+      expect(text).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
+      expect(text).toContain("| Svelte, MapLibre, Vite |");
+      expect(text).toContain("Sample City | | tools.example.test/access-check");
+
+      const headingIndex = lines.findIndex(({ text: line }) => line === "PROFESSIONAL EXPERIENCE");
+      const secondEntryIndex = lines.findIndex(({ text: line }) => line.startsWith("Engineering Assistant"));
+      const heading = lines[headingIndex];
+      const firstEntry = lines.find(({ text: line }) => line.startsWith("Software Engineering Intern"));
+      const secondEntry = lines[secondEntryIndex];
+      if (heading === undefined || firstEntry === undefined || secondEntry === undefined
+        || headingIndex === 0 || secondEntryIndex === 0) {
+        throw new Error("Phase 7 PDF is missing experience layout rows.");
+      }
+      expect(firstEntry.y).toBeGreaterThan(heading.y);
+      expect(secondEntry.y).toBeGreaterThan(firstEntry.y);
+      const headingGap = heading.y - lines[headingIndex - 1]!.yMax;
+      const entryGap = secondEntry.y - lines[secondEntryIndex - 1]!.yMax;
+      expect(headingGap).toBeGreaterThanOrEqual(entryGap * 2);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

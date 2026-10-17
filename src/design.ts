@@ -1,6 +1,6 @@
 export type PaperSize = "a4" | "letter";
 
-export const DESIGN_VERSION = "2.4.0";
+export const DESIGN_VERSION = "2.5.0";
 export const DESIGN = {
   fontFamily: "Cambria",
   typstFontFamily: "Caladea",
@@ -25,7 +25,7 @@ export const DESIGN = {
   bulletAfterPt: 2,
   entryAfterPt: 4,
   skillLineAfterPt: 2,
-  sectionBeforePt: 12,
+  sectionBeforePt: 18,
   sectionAfterPt: 4,
   bulletHangingIndentMm: 4.5,
   sectionRulePt: 0.6,

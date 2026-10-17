@@ -43,10 +43,10 @@ function text(value: string, options: RunOptions = {}): TextRun {
   });
 }
 
-function hyperlink(url: string, label: string, options: RunOptions = {}): ExternalHyperlink {
+function hyperlink(url: string, label: string, options: RunOptions = {}, noBreak = false): ExternalHyperlink {
   return new ExternalHyperlink({
     link: url,
-    children: [text(label, { ...options, color: DESIGN.colors.primary })],
+    children: [text(noBreak ? label.split("").join("\u2060") : label, { ...options, color: DESIGN.colors.primary })],
   });
 }
 
@@ -127,20 +127,25 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
       { keepNext: hasLinks, spacingAfterPt: hasLinks ? 0 : DESIGN.headerAfterPt },
     ));
   }
-  if (hasLinks) {
-    const linkRuns = resume.basics.links.flatMap(({ label, url }, index) => [
+  for (const [lineIndex, line] of resume.basics.linkLines.entries()) {
+    const linkRuns = line.flatMap(({ label, url }, index) => [
       ...(index === 0 ? [] : [text(" | ", { sizePt: DESIGN.contactFontPt, color: DESIGN.colors.secondary })]),
-      hyperlink(url, label, { sizePt: DESIGN.contactFontPt }),
+      ...(url === undefined
+        ? [text(label, { sizePt: DESIGN.contactFontPt, color: DESIGN.colors.secondary })]
+        : [hyperlink(url, label, { sizePt: DESIGN.contactFontPt }, true)]),
     ]);
-    children.push(paragraph(linkRuns, "ResumeContact", { spacingAfterPt: DESIGN.headerAfterPt }));
-  }
-
-  if (resume.summary.length > 0) {
-    children.push(sectionHeading("PROFESSIONAL SUMMARY"));
-    children.push(paragraph([text(resume.summary.join(" "))], "ResumeBody"));
+    children.push(paragraph(linkRuns, "ResumeContact", {
+      keepNext: lineIndex < resume.basics.linkLines.length - 1,
+      spacingAfterPt: lineIndex === resume.basics.linkLines.length - 1 ? DESIGN.headerAfterPt : 0,
+    }));
   }
 
   for (const section of resume.sections) {
+    if (section.kind === "summary") {
+      children.push(sectionHeading(section.title));
+      children.push(paragraph([text(resume.summary.join(" "))], "ResumeBody"));
+      continue;
+    }
     if (section.kind === "skills") {
       children.push(sectionHeading(section.title));
       for (const group of resume.skills) {
@@ -160,20 +165,36 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
         ? []
         : [text(entry.dateText, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false })];
       const detailRuns: (TextRun | ExternalHyperlink)[] = [];
-      if (entry.detail !== "") {
-        detailRuns.push(text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
-      }
-      if (entry.url !== undefined) {
-        if (detailRuns.length > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
-        detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? entry.url, { sizePt: DESIGN.entryDetailFontPt, italic: true }));
+      if (section.subtitleSlots) {
+        for (const [index, slot] of entry.subtitle.entries()) {
+          if (index > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+          if (slot !== "") {
+            detailRuns.push(index === 2 && entry.url !== undefined
+              ? hyperlink(entry.url, slot, { sizePt: DESIGN.entryDetailFontPt, italic: true }, true)
+              : text(slot, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+          }
+        }
+      } else {
+        if (entry.detail !== "") {
+          detailRuns.push(text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+        }
+        if (entry.url !== undefined) {
+          if (detailRuns.length > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+          detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? entry.url, { sizePt: DESIGN.entryDetailFontPt, italic: true }));
+        }
       }
       children.push(tabbedParagraph(
         [text(entry.heading, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
         dateRun,
         printableWidthTwips,
-        { keepNext: detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
+        { keepNext: section.subtitleSlots || detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
       ));
-      if (detailRuns.length > 0) {
+      if (section.subtitleSlots && entry.detail !== "") {
+        children.push(paragraph([
+          text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }),
+        ], "ResumeEntryDetail", { keepNext: true }));
+      }
+      if (section.subtitleSlots || detailRuns.length > 0) {
         children.push(paragraph(detailRuns, "ResumeEntryDetail", { keepNext: entry.bullets.length > 0 }));
       }
 

@@ -6,6 +6,7 @@ type ResolvedEntry = {
   readonly heading: string;
   readonly dateText: string;
   readonly detail: string;
+  readonly subtitle: readonly [string, string, string];
   readonly url?: string;
   readonly urlLabel?: string;
   readonly bullets: readonly string[];
@@ -17,7 +18,8 @@ type ResolvedSkillGroup = {
 };
 
 type ResolvedSection =
-  | { readonly kind: ResumeSectionKind; readonly title: string; readonly entries: readonly ResolvedEntry[] }
+  | { readonly kind: "summary"; readonly title: "PROFESSIONAL SUMMARY" }
+  | { readonly kind: ResumeSectionKind; readonly title: string; readonly entries: readonly ResolvedEntry[]; readonly subtitleSlots: boolean }
   | { readonly kind: "skills"; readonly title: "TECHNICAL SKILLS" };
 
 export type ResolvedResume = {
@@ -27,7 +29,8 @@ export type ResolvedResume = {
     readonly email?: string;
     readonly phone?: string;
     readonly location?: string;
-    readonly links: readonly { readonly label: string; readonly url: string }[];
+    readonly links: readonly { readonly label: string; readonly url?: string }[];
+    readonly linkLines: readonly (readonly { readonly label: string; readonly url?: string }[])[];
   };
   readonly summary: readonly string[];
   readonly sections: readonly ResolvedSection[];
@@ -56,10 +59,10 @@ function formatDate(value: string): string {
 }
 
 export function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//iu, "").replace(/^www\./iu, "");
+  return url.replace(/^https?:\/\//iu, "").replace(/^www\./iu, "").replace(/\/+$/u, "");
 }
-
-function displayLinkLabel(label: string, url: string): string {
+function displayLinkLabel(label: string, url: string | undefined): string {
+  if (url === undefined) return label;
   if (GENERIC_LINK_LABELS.has(label.trim().toLowerCase())) return displayUrl(url);
   if (URL_STYLE_LABEL.test(label)) return label;
 
@@ -74,6 +77,29 @@ function displayLinkLabel(label: string, url: string): string {
     .replace(/[/?#].*$/u, "")
     .toLowerCase();
   return hostname === labelDomain ? displayUrl(url) : label;
+}
+
+function groupHeaderLinks(links: readonly { readonly label: string; readonly url?: string }[]) {
+  if (links.length < 2) return [links];
+  const lengths = links.map(({ label }) => label.length);
+  const labelLength = lengths.reduce((sum, length) => sum + length, 0);
+  if (labelLength + 3 * (links.length - 1) <= 92) return [links];
+
+  const minimumGroupSize = links.length >= 4 ? 2 : 1;
+  let split = minimumGroupSize;
+  let best = Number.POSITIVE_INFINITY;
+  let leftLength = lengths.slice(0, minimumGroupSize).reduce((sum, length) => sum + length, 0);
+  for (let index = minimumGroupSize; index <= links.length - minimumGroupSize; index += 1) {
+    const left = leftLength + 3 * (index - 1);
+    const right = labelLength - leftLength + 3 * (links.length - index - 1);
+    const score = Math.max(left, right);
+    if (score < best) {
+      best = score;
+      split = index;
+    }
+    leftLength += lengths[index] ?? 0;
+  }
+  return [links.slice(0, split), links.slice(split)];
 }
 
 function groupSkills(skills: Application["resume"]["skills"]): ResolvedSkillGroup[] {
@@ -93,50 +119,84 @@ function groupSkills(skills: Application["resume"]["skills"]): ResolvedSkillGrou
 }
 
 export function resolveResume(application: Application): ResolvedResume {
-  const { basics, summary, sections, skills, skillsPosition } = application.resume;
-  const resolvedSections: ResolvedSection[] = sections.map(({ kind, items }) => ({
-    kind,
-    title: SECTION_TITLES[kind],
-    entries: items.map(({ name, title, issuer, location, start, end, expires, url, bullets }) => {
-      const certification = kind === "certifications";
-      const expiration = expires ?? (certification && typeof end === "string" ? end : undefined);
-      const dateText = certification
-        ? [
-          start === undefined ? undefined : `Issued ${formatDate(start)}`,
-          expiration === undefined ? undefined : `Expires ${formatDate(expiration)}`,
-        ].filter((value): value is string => value !== undefined).join(" · ")
-        : [
-          start === undefined ? undefined : formatDate(start),
-          end === null ? "Present" : end === undefined ? undefined : formatDate(end),
-        ].filter((value): value is string => value !== undefined).join(" – ");
-      const detailValues = kind === "experience" || kind === "education"
-        ? url === undefined ? [name, location] : []
-        : kind === "projects" ? [title, location] : [issuer, location];
-      const detail = detailValues.filter((value): value is string => value !== undefined).join(", ");
-      return {
-        heading: kind === "experience" || kind === "education" ? title ?? name : name,
-        dateText,
-        detail,
-        ...(url === undefined ? {} : {
-          url,
-          urlLabel: kind === "projects"
-            ? displayUrl(url)
-            : kind === "experience" || kind === "education"
-              ? [name, location].filter((value): value is string => value !== undefined).join(", ")
-              : name,
-        }),
-        bullets: bullets.map(({ text }) => text),
-      };
-    }),
-  }));
+  const { basics, summary, sections, skills, sectionOrder } = application.resume;
+  const resolvedSections = sections.map((section) => {
+    const subtitleSlots = (section.kind === "experience" || section.kind === "projects")
+      && section.items.some((item) =>
+        item.location !== undefined || item.url !== undefined || ("stack" in item && (item.stack?.length ?? 0) > 0));
+    return {
+      kind: section.kind,
+      title: SECTION_TITLES[section.kind],
+      subtitleSlots,
+      entries: section.items.map((item) => {
+        const { name, title, issuer, location, start, end, expires, url, bullets } = item;
+        const stack = "stack" in item ? item.stack : undefined;
+        const certification = section.kind === "certifications";
+        const expiration = expires ?? (certification && typeof end === "string" ? end : undefined);
+        const dateText = certification
+          ? [
+            start === undefined ? undefined : `Issued ${formatDate(start)}`,
+            expiration === undefined ? undefined : `Expires ${formatDate(expiration)}`,
+          ].filter((value): value is string => value !== undefined).join(" · ")
+          : [
+            start === undefined ? undefined : formatDate(start),
+            end === null ? "Present" : end === undefined ? undefined : formatDate(end),
+          ].filter((value): value is string => value !== undefined).join(" – ");
+        const detailValues = subtitleSlots
+          ? section.kind === "projects" ? [title] : []
+          : section.kind === "experience" || section.kind === "education"
+            ? url === undefined ? [name, location] : []
+            : section.kind === "projects" ? [title, location] : [issuer, location];
+        const detail = detailValues.filter((value): value is string => value !== undefined).join(", ");
+        return {
+          heading: section.kind === "experience" || section.kind === "education" ? title ?? name : name,
+          dateText,
+          detail,
+          subtitle: [
+            location ?? "",
+            stack?.join(", ") ?? "",
+            section.kind === "experience" ? name : url === undefined ? "" : displayUrl(url),
+          ] as const,
+          ...(url === undefined ? {} : {
+            url,
+            urlLabel: section.kind === "projects" ? displayUrl(url) : name,
+          }),
+          bullets: bullets.map(({ text }) => text),
+        };
+      }),
+    };
+  });
   const skillGroups = groupSkills(skills);
-  if (skillGroups.length > 0) {
-    const experienceIndex = resolvedSections.findIndex(({ kind }) => kind === "experience");
-    const position = skillsPosition ?? "after-experience";
-    const index = position === "end"
-      ? resolvedSections.length
-      : position === "after-summary" ? 0 : experienceIndex < 0 ? 0 : experienceIndex + 1;
-    resolvedSections.splice(index, 0, { kind: "skills", title: "TECHNICAL SKILLS" });
+  const defaultOrder: ("summary" | "skills" | ResumeSectionKind)[] = ["summary"];
+  let skillsPlaced = false;
+  if (!resolvedSections.some(({ kind }) => kind === "experience")) {
+    defaultOrder.push("skills");
+    skillsPlaced = true;
+  }
+  for (const section of resolvedSections) {
+    defaultOrder.push(section.kind);
+    if (section.kind === "experience" && !skillsPlaced) {
+      defaultOrder.push("skills");
+      skillsPlaced = true;
+    }
+  }
+  if (!skillsPlaced) defaultOrder.push("skills");
+  const order = sectionOrder === undefined
+    ? defaultOrder
+    : [...sectionOrder, ...defaultOrder.filter((kind) => !sectionOrder.includes(kind))];
+  const sectionByKind = new Map(
+    resolvedSections.map((section) => [section.kind, section] as const),
+  );
+  const orderedSections: ResolvedSection[] = [];
+  for (const kind of order) {
+    if (kind === "summary") {
+      if (summary.length > 0) orderedSections.push({ kind: "summary", title: "PROFESSIONAL SUMMARY" });
+    } else if (kind === "skills") {
+      if (skillGroups.length > 0) orderedSections.push({ kind: "skills", title: "TECHNICAL SKILLS" });
+    } else {
+      const section = sectionByKind.get(kind);
+      if (section !== undefined && section.entries.length > 0) orderedSections.push(section);
+    }
   }
 
   return {
@@ -146,10 +206,14 @@ export function resolveResume(application: Application): ResolvedResume {
       ...(basics.email === undefined ? {} : { email: basics.email }),
       ...(basics.phone === undefined ? {} : { phone: basics.phone }),
       ...(basics.location === undefined ? {} : { location: basics.location }),
-      links: basics.links.map(({ label, url }) => ({ label: displayLinkLabel(label, url), url })),
+      links: basics.links.map(({ label, url }) => ({ label: displayLinkLabel(label, url), ...(url === undefined ? {} : { url }) })),
+      linkLines: groupHeaderLinks(basics.links.map(({ label, url }) => ({
+        label: displayLinkLabel(label, url),
+        ...(url === undefined ? {} : { url }),
+      }))),
     },
     summary: summary.map(({ text }) => text),
-    sections: resolvedSections,
+    sections: orderedSections,
     skills: skillGroups,
   };
 }

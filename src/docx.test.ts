@@ -25,7 +25,7 @@ async function zipPart(path: string, part: string): Promise<string> {
 
 function xmlText(xml: string): string[] {
   return [...xml.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/gu)].map(([, value]) =>
-    (value ?? "").replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&apos;", "'"),
+    (value ?? "").replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&apos;", "'").replaceAll("\u2060", ""),
   );
 }
 function paragraphTexts(xml: string): string[] {
@@ -74,7 +74,7 @@ describe("editable DOCX export", () => {
       expect(relationships).toContain("https://morgan.example.net");
       expect(relationships).toContain("https://github.com/morgan-example");
       const experience = resume.sections.find((section) => section.kind === "experience");
-      if (experience === undefined || experience.kind === "skills") throw new Error("Dense fixture is missing experience.");
+      if (experience === undefined || experience.kind === "skills" || experience.kind === "summary") throw new Error("Dense fixture is missing experience.");
       const firstBullet = experience.entries[0]?.bullets[0];
       if (firstBullet === undefined) throw new Error("Dense fixture is missing its first bullet.");
       expect(paragraphs.some((value) => value.startsWith("Senior Software Engineer"))).toBe(true);
@@ -134,8 +134,13 @@ describe("editable DOCX export", () => {
         ...base.basics,
         headline: "Full-Stack Engineer",
         links: [{ label: "github.com/sfsajid91", url: "https://github.com/sfsajid91" }],
+        linkLines: [[{ label: "github.com/sfsajid91", url: "https://github.com/sfsajid91" }]],
       },
       summary: ["Built dependable APIs.", "Mentored a team."],
+      sections: [
+        ...base.sections.filter(({ kind }) => kind !== "summary"),
+        { kind: "summary", title: "PROFESSIONAL SUMMARY" },
+      ],
       skills: [
         { category: "Languages", labels: ["TypeScript", "Bun"] },
         { category: "Frontend", labels: ["React"] },
@@ -165,7 +170,7 @@ describe("editable DOCX export", () => {
     const resume: ResolvedResume = {
       ...base,
       summary: [hostileLooking],
-      sections: [],
+      sections: [{ kind: "summary", title: "PROFESSIONAL SUMMARY" }],
       skills: [],
     };
     const directory = await temporaryDirectory();
@@ -218,29 +223,65 @@ describe("editable DOCX export", () => {
       expect(projectHeader).toContain("Apr 2019 – Apr 2020");
       expect(projectHeader).not.toContain("example.org");
       expect(paragraphs.some((value) => value.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
-      expect(paragraphs).toContain("Northstar — Recovery Systems, Portland, OR");
+      expect(paragraphs.some((value) =>
+        value.replace(/\s+/gu, " ") === "Portland, OR | | Northstar — Recovery Systems",
+      )).toBe(true);
       expect(paragraphs.some((value) => value.includes("Issued Mar 2018 · Expires Mar 2021"))).toBe(true);
       const headingStyle = paragraphStyle(styles, "ResumeSectionHeading");
-      expect(headingStyle).toContain('w:before="240"');
+      expect(headingStyle).toContain('w:before="360"');
       expect(headingStyle).toContain('w:after="80"');
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   });
-  test("places skills after summary or at the end when requested", async () => {
-    const raw = JSON.parse(await readFile(new URL("../examples/application.json", import.meta.url), "utf8")) as unknown;
+  test("serializes Phase 7 header links and section-wide subtitle slots", async () => {
+    const resume = await fixture("../examples/phase7-render-application.json");
+    const directory = await temporaryDirectory();
+    const output = join(directory, "phase7.docx");
+    try {
+      await exportDocx(resume, { outputPath: output, paper: "a4", force: false });
+      const [body, relationships, styles] = await Promise.all([
+        zipPart(output, "word/document.xml"),
+        zipPart(output, "word/_rels/document.xml.rels"),
+        zipPart(output, "word/styles.xml"),
+      ]);
+      const paragraphs = paragraphTexts(body).map((value) => value.replaceAll("\u2060", ""));
+      const linkParagraphs = paragraphs.filter((value) => /linkedin\.com|research\.example|Open profile/u.test(value));
+      expect(linkParagraphs).toHaveLength(2);
+      expect(linkParagraphs.map((value) => value.split(" | ").length)).toEqual([3, 5]);
+      expect(relationships).toContain("https://linkedin.com/in/jordan-example/");
+      expect(relationships).not.toContain("Open profile");
+      expect(paragraphs).toContain("North Sample | TypeScript, PostgreSQL, Docker | Sample Research Lab");
+      expect(paragraphs).toContain("| Python, FastAPI | Example Studio");
+      expect(paragraphs).toContain("Personal scheduling application");
+      expect(paragraphs).toContain("Open data explorer");
+      expect(paragraphs).toContain("Accessibility audit helper");
+      expect(paragraphs).toContain("Remote | React, SQLite | projects.example.test/orbit-planner");
+      expect(paragraphs).toContain("| Svelte, MapLibre, Vite |");
+      expect(paragraphs.some((value) =>
+        value.replace(/\s+/gu, " ") === "Sample City | | tools.example.test/access-check",
+      )).toBe(true);
+      expect(paragraphStyle(styles, "ResumeSectionHeading")).toContain('w:before="360"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+  test("places sections in requested partial order and preserves the default omitted order", async () => {
+    const raw = JSON.parse(await readFile(new URL("../examples/dense-application.json", import.meta.url), "utf8")) as unknown;
     const application = applicationSchema.parse(raw);
     const directory = await temporaryDirectory();
     try {
-      for (const [position, beforeExperience] of [["after-summary", true], ["end", false]] as const) {
-        application.resume.skillsPosition = position;
-        const output = join(directory, `${position}.docx`);
-        await exportDocx(resolveResume(application), { outputPath: output, paper: "a4", force: false });
+      const cases: { order?: ("summary" | "skills" | "experience" | "projects" | "education" | "certifications")[]; expectedPrefix: string[] }[] = [
+        { order: ["education", "projects"], expectedPrefix: ["EDUCATION", "SELECTED PROJECTS", "PROFESSIONAL SUMMARY"] },
+        { expectedPrefix: ["PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS"] },
+      ];
+      for (const { order, expectedPrefix } of cases) {
+        if (order === undefined) delete application.resume.sectionOrder;
+        else application.resume.sectionOrder = [...order];
+        const output = join(directory, "section-order.docx");
+        await exportDocx(resolveResume(application), { outputPath: output, paper: "a4", force: true });
         const paragraphs = paragraphTexts(await zipPart(output, "word/document.xml"));
-        const skillsIndex = paragraphs.indexOf("TECHNICAL SKILLS");
-        const experienceIndex = paragraphs.indexOf("PROFESSIONAL EXPERIENCE");
-        expect(skillsIndex >= 0).toBe(true);
-        expect(beforeExperience ? skillsIndex < experienceIndex : skillsIndex > experienceIndex).toBe(true);
+        expect(paragraphs.filter((value) => expectedPrefix.includes(value)).slice(0, expectedPrefix.length)).toEqual(expectedPrefix);
       }
     } finally {
       await rm(directory, { recursive: true, force: true });

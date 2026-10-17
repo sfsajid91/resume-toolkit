@@ -80,12 +80,12 @@ type Resume = {
     email?: string;
     phone?: string;
     location?: string;
-    links: { label: string; url: string }[];
+    links: { label: string; url?: string }[];
   };
   summary: Claim[];
   sections: Section[];
   skills: { id: string; label: string; category?: string; evidenceIds: string[] }[];
-  skillsPosition?: "after-summary" | "after-experience" | "end"; // omitted = existing after-experience placement
+  sectionOrder?: ("summary" | "skills" | "experience" | "projects" | "education" | "certifications")[];
 };
 type Section = {
   kind: "experience" | "projects" | "education" | "certifications";
@@ -99,7 +99,8 @@ type Entry = {
   issuer?: string;
   start?: string; // calendar-valid YYYY-MM
   end?: string | null; // null = ongoing; omitted = not recorded
-  location?: string; // optional location appended to the italic detail line
+  location?: string;
+  stack?: string[]; // experience/project only; comma-separated in the renderer
   url?: string;
   expires?: string; // optional certification expiry, YYYY-MM
   bullets: Claim[];
@@ -131,18 +132,17 @@ type Job = {
 };
 ```
 
-These outlines are design contracts, not a second manually maintained schema. Implementation uses strict Zod definitions and kind-specific entry refinements.
+These outlines are design contracts, not a second manually maintained schema. Implementation uses strict Zod definitions and kind-specific entry schemas; only experience and project entries accept `stack`.
 
 ### Required behavior
 
 - All objects reject unknown fields and unsupported schema versions. Revisions are positive integers. Reject whitespace-only required strings without rewriting inputs.
 - All claim IDs are unique across summary and bullets. Entry, skill, evidence, and requirement IDs are unique in their respective namespaces; duplicate selections/references are errors.
-- Section kinds are unique; preserve input section and item order. Headings come from a fixed map: Professional Experience, Selected Projects, Education, Certifications, plus Professional Summary and Technical Skills.
+- Section kinds are unique; by default preserve input section and item order. A supplied `sectionOrder` controls rendered order. Headings come from a fixed map: Professional Experience, Selected Projects, Education, Certifications, plus Professional Summary and Technical Skills.
 - Experience requires title/start; education requires title; certification requires issuer. At least one entry or skill must exist. Empty summary and credential bullets are allowed.
 - Validate calendar months and chronological order. Do not invent dates or silently normalize them.
-- Lint runs with `lint --input <file> --json` and is also included by `validate`. It emits only `severity: "warning"` issues with `lint.*` codes, JSON-pointer paths, and related IDs. The code set is `lint.banned_word`, `lint.dash`, `lint.without_tail`, `lint.rule_of_three`, `lint.weak_opener`, `lint.bullet_length`, `lint.bullet_count`, `lint.opener_repeat`, `lint.no_number`, `lint.duplicate_bullet`, `lint.repeated_theme`, `lint.summary`, `lint.skills_thin`, `lint.skill_not_in_body`, `lint.date_overlap`, and `lint.cert_expired`. Lint warnings do not change valid/invalid status, evidence linkage, exit codes, or export eligibility.
-- Optional input additions are `entry.location`, certification `entry.expires` (`YYYY-MM`), and `resume.skillsPosition`; they do not change `schemaVersion: 1`.
-- Web URLs allow `https:`/`http:` only; validate email separately. Reject unsafe schemes/control characters. Links are never fetched.
+- Lint runs with `lint --input <file> --json` and is also included by `validate`. It emits only `severity: "warning"` issues with `lint.*` codes, JSON-pointer paths, and related IDs. The code set is `lint.banned_word`, `lint.dash`, `lint.without_tail`, `lint.rule_of_three`, `lint.weak_opener`, `lint.bullet_length`, `lint.bullet_count`, `lint.opener_repeat`, `lint.no_number`, `lint.duplicate_bullet`, `lint.repeated_theme`, `lint.summary`, `lint.skills_thin`, `lint.skill_not_in_body`, `lint.date_overlap`, `lint.cert_expired`, `lint.hedge_text`, `lint.transaction_bullet`, `lint.vague_verb`, `lint.no_stack`, `lint.thin_experience`, `lint.missing_contact`, `lint.header_links`, `lint.skills_domain`, `lint.freelance_gap`, and `lint.project_unlinked`. Lint warnings do not change valid/invalid status, evidence linkage, exit codes, or export eligibility.
+- Optional input additions are `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder`; they do not change `schemaVersion: 1`. `sectionOrder` IDs are unique; listed sections come first, then omitted sections follow the current default order. Students and early-career applicants should place `education` before `projects`.
 - When evidence is supplied, every referenced evidence ID must resolve; entry bullets may reference only evidence belonging to that entry. Summary and skills may span entries.
 - When evidence is absent or a claim/skill has no evidence references, `validate`/`render` issue warnings but allow structurally valid exports. Explicitly report evidence linkage as unavailable/incomplete, never verified.
 - `evaluate` requires evidence, nonempty evidence refs for every claim/skill, a job, and at least one quoted requirement. Missing evaluation prerequisites fail before key lookup or network access.
@@ -243,15 +243,15 @@ Refuse input/output aliasing, including symlink aliases. Stage writes on the des
 
 ### One content model, two serializers
 
-A plain resolved resume model removes job/evidence metadata and retains selected content. Both serializers consume it. Source-section order is preserved. Omitted `skillsPosition` inserts skills immediately after experience, or before the first source section when experience is absent; explicit `after-summary`, `after-experience`, and `end` placements are supported. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
+A plain resolved resume model removes job/evidence metadata and retains selected content. Both serializers consume it. Without `sectionOrder`, source section order is preserved and skills appear immediately after experience, or before the first source section when experience is absent. An explicit `sectionOrder` puts listed IDs first, then appends omitted IDs in the default order; empty sections are ignored. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
 
-Current design (version 2.4.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
+Current design (version 2.5.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
 
-The centered header uses a 19 pt bold uppercase name (2 pt after), optional 12 pt regular headline (3 pt after), 11 pt location/phone/email joined by ` | `, then 11 pt links joined by ` | `. Typst applies the same 0.7em font-size-proportional gap between stacked header rows. Generic labels and labels matching their link domain display the clean URL without `http://`, `https://`, or leading `www.`; explicit URL-style labels remain unchanged, and hyperlink targets remain the original URL. The header block ends with 8 pt spacing.
+The centered header uses a 19 pt bold uppercase name (2 pt after), optional 12 pt regular headline (3 pt after), 11 pt location/phone/email joined by ` | `, then a separate 11 pt links row. Links remain unbreakable; overflow is split into two balanced link lines, without a one-link orphan. Generic labels and labels matching their link domain display the clean URL without `http://`, `https://`, leading `www.`, or trailing slashes; explicit URL-style labels remain unchanged. A header item without a URL is plain text. Hyperlink targets remain the original URL. The header block ends with 8 pt spacing.
 
-Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 12 pt bold uppercase, full-width 0.6 pt black bottom rule, 12 pt before/4 pt after, and kept with the first entry header.
+Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 12 pt bold uppercase, full-width 0.6 pt black bottom rule, 18 pt before/4 pt after, and kept with the first entry header. Typst uses an explicit strong vertical spacer so paragraph/block spacing cannot collapse; raster inspection and DOCX preview confirm the effective gap exceeds twice the 4 pt entry gap.
 
-All entry kinds use one header row: an 11 pt bold heading on the left and dates on the right. A following 11 pt italic detail line carries employer/institution/issuer and optional location appended as `, City`. Projects put the URL on this detail/subtitle line so it does not constrain the title; dates remain right-aligned. DOCX uses one native right-aligned tab stop; Typst uses a two-column grid. Dates use English month abbreviations `Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec`. Certifications display `Issued Mon YYYY` and optional `Expires Mon YYYY`, never a range.
+All entry kinds use one header row: an 11 pt bold heading on the left and dates on the right. Experience and project sections use one shared three-slot subtitle layout when any entry has location, stack, or URL; every entry reserves location, comma-separated stack, and employer/link slots in that order, with blanks rendered without placeholder text. Project titles remain on their own italic detail line, separate from shared metadata. Other sections retain their existing italic detail line. DOCX uses one native right-aligned tab stop; Typst uses a two-column grid. Dates use English month abbreviations `Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec`. Certifications display `Issued Mon YYYY` and optional `Expires Mon YYYY`, never a range.
 
 Summary claims are joined with one space into a single 11 pt paragraph with 3 pt after. Skills use 11 pt text and 2 pt after: one paragraph per category in first-appearance order, with a bold category name followed by comma-separated regular labels; uncategorized skills use bold `Skills:`. Bullets are 10.5 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have a 4 pt inter-entry gap. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst bundles Caladea and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX declares Cambria; exact display remains dependent on recipient font availability. No photo, icons, skill bars, content tables, or floating shapes.
 
@@ -378,8 +378,7 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 
 ### Implementation progress
 
-Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete.
-The skill covers tailoring, review/fix, and render-only paths. Local lint warnings do not change validation status/evidence linkage, exit codes, or export eligibility. Optional `entry.location`, certification `entry.expires`, and `resume.skillsPosition` retain `schemaVersion: 1`; the renderer is design 2.4.0. Live Jev remains unverified and was not run for this rework.
+Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete. The skill covers tailoring, review/fix, and render-only paths. Local lint warnings do not change validation status/evidence linkage, exit codes, or export eligibility. Optional `entry.location`, experience/project `entry.stack`, certification `entry.expires`, optional header link URLs, and `resume.sectionOrder` retain `schemaVersion: 1`; the renderer is design 2.5.0. Live Jev remains unverified and was not run for this rework.
 
 1. **Completed — Phase 1: contracts, validation, and lint.** Strict Zod schemas, JSON Schema output, one-time input snapshots/hashes, locatable issues, `schema`, `validate`, and warning-only `lint` CLI behavior. Optional schema additions remain version 1. Current verification is recorded below; no live Jev request was made.
 

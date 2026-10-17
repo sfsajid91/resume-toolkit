@@ -212,7 +212,9 @@ function validateBasics(application: Application, issues: ValidationIssue[]): vo
     addIssue(issues, "/resume/basics/email", "email.invalid", "error", "Email address has an invalid format.");
   }
   for (const [index, link] of application.resume.basics.links.entries()) {
-    validateUrl(link.url, `/resume/basics/links/${index}/url`, issues);
+    if (link.url !== undefined) {
+      validateUrl(link.url, `/resume/basics/links/${index}/url`, issues);
+    }
   }
 }
 

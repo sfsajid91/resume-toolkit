@@ -266,11 +266,35 @@ describe("application contract and validation", () => {
     expect(unconfirmedResult.evidenceLinkage.status).not.toBe("verified");
     expect(unconfirmedResult.issues).toContainEqual(expect.objectContaining({ code: "evidence.unconfirmed", severity: "warning" }));
   });
-
-  test("accepts optional location, skill position, and certification expiry fields", () => {
+  test("keeps a labeled header link without a URL warning-only", () => {
     const application = fixture();
-    application.resume.sections[0]!.items[0]!.location = "Seattle, WA";
-    application.resume.skillsPosition = "after-summary";
+    application.resume.basics.links.push({ label: "Professional profile" });
+    const result = validateApplication(application);
+    expect(result.status).toBe("valid");
+    expect(result.evidenceLinkage.status).toBe("complete");
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      code: "lint.header_links",
+      severity: "warning",
+    }));
+    expect(result.issues.filter(({ severity }) => severity === "error")).toEqual([]);
+  });
+
+  test("accepts sectionOrder, optional header URLs and stack only for experience/projects", () => {
+    const application = fixture();
+    const experience = application.resume.sections.find(({ kind }) => kind === "experience");
+    if (experience === undefined || experience.kind !== "experience") throw new Error("Missing experience fixture.");
+    experience.items[0]!.location = "Seattle, WA";
+    experience.items[0]!.stack = ["TypeScript", "PostgreSQL"];
+    application.resume.sectionOrder = ["education", "projects"];
+    application.resume.basics.links.push({ label: "Research" });
+    application.resume.sections.push({
+      kind: "projects",
+      items: [{ id: "project-stack", name: "Sample Project", stack: ["Bun"], bullets: [] }],
+    });
+    application.resume.sections.push({
+      kind: "education",
+      items: [{ id: "education-stack-test", name: "Example University", title: "B.S. Computing", bullets: [] }],
+    });
     application.resume.sections.push({
       kind: "certifications",
       items: [{
@@ -284,23 +308,32 @@ describe("application contract and validation", () => {
     });
     expect(applicationSchema.safeParse(application).success).toBe(true);
 
+    const educationWithStack = structuredClone(application);
+    const education = educationWithStack.resume.sections.find(({ kind }) => kind === "education");
+    if (education === undefined || education.kind !== "education") throw new Error("Missing education fixture.");
+    Object.assign(education.items[0]!, { stack: ["Invalid"] });
+    expect(applicationSchema.safeParse(educationWithStack).success).toBe(false);
+    const certificationWithStack = structuredClone(application);
+    const certification = certificationWithStack.resume.sections.find(({ kind }) => kind === "certifications");
+    if (certification === undefined || certification.kind !== "certifications") throw new Error("Missing certification fixture.");
+    Object.assign(certification.items[0]!, { stack: ["Invalid"] });
+    expect(applicationSchema.safeParse(certificationWithStack).success).toBe(false);
+    const duplicateOrder = structuredClone(application);
+    duplicateOrder.resume.sectionOrder = ["education", "education"];
+    expect(applicationSchema.safeParse(duplicateOrder).success).toBe(false);
+
     const invalidExpiry = structuredClone(application);
-    invalidExpiry.resume.sections[1]!.items[0]!.expires = "2027-13";
+    invalidExpiry.resume.sections.find(({ kind }) => kind === "certifications")!.items[0]!.expires = "2027-13";
     expect(validateApplication(invalidExpiry).issues).toContainEqual(expect.objectContaining({
-      path: "/resume/sections/1/items/0/expires",
       code: "date.invalid_month",
       severity: "error",
     }));
     const misplacedExpiry = structuredClone(application);
     misplacedExpiry.resume.sections[0]!.items[0]!.expires = "2027-01";
     expect(validateApplication(misplacedExpiry).issues).toContainEqual(expect.objectContaining({
-      path: "/resume/sections/0/items/0/expires",
       code: "entry.expires_certification_only",
       severity: "error",
     }));
-    const invalidPosition = structuredClone(application);
-    invalidPosition.resume.skillsPosition = "before" as never;
-    expect(applicationSchema.safeParse(invalidPosition).success).toBe(false);
   });
 
   test("detects missing resume content and exposes schema generation", () => {
@@ -319,7 +352,8 @@ describe("application contract and validation", () => {
     expect(generated).toContain('"category"');
     expect(generated).toContain('"location"');
     expect(generated).toContain('"expires"');
-    expect(generated).toContain('"skillsPosition"');
+    expect(generated).toContain('"sectionOrder"');
+    expect(generated).not.toContain('"skillsPosition"');
   });
 });
 

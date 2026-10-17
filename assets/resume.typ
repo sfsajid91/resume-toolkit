@@ -41,21 +41,36 @@
 
 #let section-heading(value) = block(
   width: 100%,
-  above: points(design.at("section-before-pt")),
+  above: 0pt,
   below: points(design.at("section-after-pt")),
   sticky: true,
 )[
   #text(size: points(design.at("section-heading-font-pt")), weight: "bold", fill: primary)[#value]
   #line(length: 100%, stroke: points(design.at("section-rule-pt")) + primary)
 ]
-#let entry-header(entry) = block(sticky: true)[
+#let entry-header(entry, section) = block(sticky: true)[
   #grid(
     columns: (1fr, auto),
     column-gutter: 8pt,
     [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.heading]],
     align(right)[#if entry.dateText != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateText]]],
   )
-  #if entry.detail != "" or ("url" in entry) [
+  #if section.subtitleSlots [
+    #if entry.detail != "" [
+      #par(spacing: points(design.at("paragraph-after-pt")))[
+        #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]
+      ]
+    ]
+    #par(spacing: points(design.at("paragraph-after-pt")))[
+      #for (index, slot) in entry.subtitle.enumerate() [
+        #if index > 0 [ | ]
+        #if slot != "" [
+          #if index == 2 and "url" in entry [#link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]]]
+          #if not (index == 2 and "url" in entry) [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#slot]]
+        ]
+      ]
+    ]
+  ] else if entry.detail != "" or ("url" in entry) [
     #par(spacing: points(design.at("paragraph-after-pt")))[
       #if entry.detail != "" [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]]
       #if "url" in entry [
@@ -106,45 +121,49 @@
   ]
   #if resume.basics.links.len() > 0 [
     #par(spacing: 0pt)[
-      #text(size: points(design.at("contact-font-pt")), fill: secondary)[
-        #for (index, item) in resume.basics.links.enumerate() [
-          #if index > 0 [ | ]
-          #link(item.url)[#item.label]
+      #for (line-index, line) in resume.basics.linkLines.enumerate() [
+        #if line-index > 0 [#linebreak()]
+        #text(size: points(design.at("contact-font-pt")), fill: secondary)[
+          #for (index, item) in line.enumerate() [
+            #if index > 0 [ | ]
+            #if "url" in item [#box(link(item.url)[#item.label])]
+            #if "url" not in item [#box(item.label)]
+          ]
         ]
+      ]
       ]
     ]
   ]
-]
 #v(points(design.at("header-after-pt")))
 
-#if resume.summary.len() > 0 [
-  #section-heading("PROFESSIONAL SUMMARY")
-  #par(spacing: points(design.at("paragraph-after-pt")))[#resume.summary.join(" ")]
-]
-
-
-#for section in resume.sections [
-  #if section.kind == "skills" and resume.skills.len() > 0 [
-    #for (group-index, group) in resume.skills.enumerate() [
-      #if group-index == 0 [
-        #block(sticky: true)[
-          #section-heading(section.title)
+  #for section in resume.sections [
+    #if section.kind == "summary" [
+      #v(points(design.at("section-before-pt")))
+      #section-heading(section.title)
+      #par(spacing: points(design.at("paragraph-after-pt")))[#resume.summary.join(" ")]
+    ] else if section.kind == "skills" and resume.skills.len() > 0 [
+      #for (group-index, group) in resume.skills.enumerate() [
+        #if group-index == 0 [
+          #v(points(design.at("section-before-pt")))
+          #block(sticky: true)[
+            #section-heading(section.title)
+            #skill-line(group)
+          ]
+        ] else [
           #skill-line(group)
         ]
-      ] else [
-        #skill-line(group)
       ]
-    ]
-  ] else if section.kind != "skills" and section.entries.len() > 0 [
-    #for (entry-index, entry) in section.entries.enumerate() [
+    ] else if section.kind != "skills" and section.entries.len() > 0 [
+      #for (entry-index, entry) in section.entries.enumerate() [
       #if entry-index == 0 [
+        #v(points(design.at("section-before-pt")))
         #block(sticky: true)[
           #section-heading(section.title)
-          #entry-header(entry)
+          #entry-header(entry, section)
         ]
       ] else [
         #v(points(design.at("entry-after-pt")))
-        #entry-header(entry)
+          #entry-header(entry, section)
       ]
       #if entry.bullets.len() > 0 [
         #list(

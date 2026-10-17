@@ -4,7 +4,7 @@
 
 `resume-toolkit` is a local Bun/TypeScript CLI for validating agent-supplied resume data, optionally evaluating it with Jev, and exporting PDF/DOCX. The connected AI agent owns career context, tailoring, and revisions; the toolkit does not own a profile database or application workflow. The agent skill lives in `skills/resume-toolkit/SKILL.md`.
 
-**Current state:** The local CLI includes `schema`, `validate`, `lint`, `evaluate`, and `render`; strict schema version 1 supports optional `entry.location`, certification `entry.expires`, and `resume.skillsPosition`. The skill documents tailoring, review/fix, and render-only modes. Lint findings are warnings and do not change validation status/evidence linkage or block export. The evaluation dry-run, local mock failure cases, and synthetic revision-to-export workflow are verified; live Jev answer/model/usage and cancellation remain unverified.
+**Current state:** The local CLI includes `schema`, `validate`, `lint`, `evaluate`, and `render`; strict schema version 1 supports optional `entry.location`, `entry.stack` on experience/projects, certification `entry.expires`, optional header-link URLs, and `resume.sectionOrder`. The skill documents tailoring, review/fix, and render-only modes. Lint findings are warnings and do not change validation status/evidence linkage or block export. The evaluation dry-run, local mock failure cases, and synthetic revision-to-export workflow are verified; live Jev answer/model/usage and cancellation remain unverified.
 
 ## Architecture & Data Flow
 

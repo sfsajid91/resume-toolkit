@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "phase7-render-layout",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Jordan Example",
+      "headline": "Early-career software engineer",
+      "email": "jordan@example.test",
+      "phone": "+1 555 010 2020",
+      "location": "Sample City",
+      "links": [
+        { "label": "LinkedIn", "url": "https://linkedin.com/in/jordan-example/" },
+        { "label": "GitHub", "url": "https://github.com/jordan-example/" },
+        { "label": "Portfolio", "url": "https://jordan-example.vercel.app/" },
+        { "label": "Research profile", "url": "https://research.example.test/profiles/jordan-example/publications/" },
+        { "label": "Code samples", "url": "https://code.example.test/jordan/selected-work/" },
+        { "label": "Blog", "url": "https://notes.example.test/" },
+        { "label": "Email me", "url": "https://contact.example.test/jordan" },
+        { "label": "Open profile" }
+      ]
+    },
+    "summary": [
+      { "id": "summary-1", "text": "Early-career engineer building reliable services and accessible tools.", "evidenceIds": [] }
+    ],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          { "id": "exp-sample-lab", "name": "Sample Research Lab", "title": "Software Engineering Intern", "start": "2025-05", "end": "2025-08", "location": "North Sample", "stack": ["TypeScript", "PostgreSQL", "Docker"], "bullets": [{ "id": "exp-claim-1", "text": "Built a data service used by three internal teams.", "evidenceIds": [] }] },
+          { "id": "exp-sample-studio", "name": "Example Studio", "title": "Engineering Assistant", "start": "2024-01", "end": "2024-12", "stack": ["Python", "FastAPI"], "bullets": [] },
+          { "id": "exp-community", "name": "Community Workshop", "title": "Volunteer Developer", "start": "2023-06", "end": null, "location": "West Example", "bullets": [] }
+        ]
+      },
+      {
+        "kind": "projects",
+        "items": [
+          { "id": "project-orbit", "name": "Orbit Planner", "title": "Personal scheduling application", "start": "2025-01", "end": "2025-04", "location": "Remote", "stack": ["React", "SQLite"], "url": "https://projects.example.test/orbit-planner/", "bullets": [{ "id": "project-claim-1", "text": "Designed an offline-first planning workflow with synchronized calendar views.", "evidenceIds": [] }] },
+          { "id": "project-field-notes", "name": "Field Notes", "title": "Open data explorer", "start": "2024-03", "end": "2024-09", "stack": ["Svelte", "MapLibre", "Vite"], "bullets": [] },
+          { "id": "project-access", "name": "Access Check", "title": "Accessibility audit helper", "location": "Sample City", "url": "https://tools.example.test/access-check/", "bullets": [] }
+        ]
+      },
+      {
+        "kind": "education",
+        "items": [
+          { "id": "education-sample", "name": "Example State University", "title": "B.S. Computer Science", "start": "2021-09", "end": "2025-05", "location": "Example City", "bullets": [] }
+        ]
+      },
+      {
+        "kind": "certifications",
+        "items": [
+          { "id": "cert-sample", "name": "Cloud Foundations", "issuer": "Example Learning Institute", "start": "2025-02", "expires": "2027-02", "bullets": [] }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-typescript", "label": "TypeScript", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-python", "label": "Python", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-postgres", "label": "PostgreSQL", "category": "Tools", "evidenceIds": [] }
+    ]
+  }
+}

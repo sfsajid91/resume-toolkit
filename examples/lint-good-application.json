@@ -5,6 +5,7 @@
   "resume": {
     "basics": {
       "name": "Jordan Example",
+      "email": "jordan@example.com",
       "location": "Seattle, WA",
       "links": []
     },

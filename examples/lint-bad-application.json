@@ -6,7 +6,10 @@
     "basics": {
       "name": "Casey Example",
       "location": "Portland, OR",
-      "links": []
+      "links": [
+        { "label": "Upwork", "url": "https://upwork.com/freelancers/~example" },
+        { "label": "Portfolio" }
+      ]
     },
     "summary": [
       {
@@ -30,12 +33,31 @@
         "kind": "experience",
         "items": [
           {
+            "id": "role-recent",
+            "name": "Cascade Systems",
+            "title": "Staff Engineer",
+            "start": "2024-01",
+            "end": null,
+            "bullets": [
+              {
+                "id": "claim-recent-one",
+                "text": "Completed paid delivery through Fiverr for the release workflow.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-recent-two",
+                "text": "Built service with unconfirmed client metrics.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
             "id": "role-current",
             "name": "Northstar — Recovery Systems",
             "title": "Senior Engineer – Platform",
             "location": "Portland, OR",
             "start": "2023-01",
-            "end": null,
+            "end": "2023-12",
             "bullets": [
               {
                 "id": "claim-duplicate-a",
@@ -177,6 +199,21 @@
               {
                 "id": "claim-project-four",
                 "text": "Documented safe retry behavior and rollback steps for the deployment utility.",
+                "evidenceIds": []
+              }
+            ]
+          }
+          ,
+          {
+            "id": "project-unlinked",
+            "name": "Local Task Runner",
+            "title": "Creator",
+            "start": "2021-01",
+            "end": "2021-06",
+            "bullets": [
+              {
+                "id": "claim-runner-one",
+                "text": "Built task runner for local developer workstations.",
                 "evidenceIds": []
               }
             ]
