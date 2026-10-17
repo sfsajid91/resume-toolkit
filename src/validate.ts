@@ -6,6 +6,7 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from "./schema.ts";
+import { lintApplication } from "./lint.ts";
 
 type Evidence = NonNullable<Application["evidence"]>[number];
 type IdLocation = { readonly id: string; readonly path: string };
@@ -150,7 +151,7 @@ export function validateApplication(value: unknown): ValidationResult {
     addIssue(issues, "/evidence", "evidence.unavailable", "warning", "Evidence records were not supplied; linkage cannot be assessed.");
   }
   if (application.job !== undefined) validateJob(application.job, issues);
-
+  issues.push(...lintApplication(application));
   return {
     status: issues.some((issue) => issue.severity === "error") ? "invalid" : "valid",
     evidenceLinkage: getEvidenceLinkage(application, linkage),
@@ -232,12 +233,18 @@ function validateEntry(
   if (kind === "certifications" && entry.issuer === undefined) {
     addIssue(issues, `${path}/issuer`, "entry.issuer_required", "error", "Certification entries require an issuer.", [entry.id]);
   }
+  if (kind !== "certifications" && entry.expires !== undefined) {
+    addIssue(issues, `${path}/expires`, "entry.expires_certification_only", "error", "Expiry dates are only valid for certifications.", [entry.id]);
+  }
 
   if (entry.start !== undefined && !isValidMonth(entry.start)) {
     addIssue(issues, `${path}/start`, "date.invalid_month", "error", "Date must be a calendar-valid YYYY-MM month.", [entry.id]);
   }
   if (typeof entry.end === "string" && !isValidMonth(entry.end)) {
     addIssue(issues, `${path}/end`, "date.invalid_month", "error", "Date must be a calendar-valid YYYY-MM month.", [entry.id]);
+  }
+  if (entry.expires !== undefined && !isValidMonth(entry.expires)) {
+    addIssue(issues, `${path}/expires`, "date.invalid_month", "error", "Date must be a calendar-valid YYYY-MM month.", [entry.id]);
   }
   if (entry.start !== undefined && typeof entry.end === "string" && isValidMonth(entry.start) && isValidMonth(entry.end) && entry.start > entry.end) {
     addIssue(issues, `${path}/end`, "date.inverted_range", "error", "Entry end month must not precede its start month.", [entry.id]);

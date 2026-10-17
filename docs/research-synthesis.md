@@ -1,5 +1,8 @@
 # Local Resume Toolkit — Research Synthesis and v0.1 PRD
 
+> **Superseded:** This is an earlier research proposal, not the current product contract. Follow [prototype-plan.md](prototype-plan.md) for current workflows, schema, lint, rendering, CLI, and verification; proposed profile/job/draft files, Playwright, and Markdown/HTML exports are not current.
+
+
 Research date: 2026-10-11. Input: [prd-idea.md](prd-idea.md). Status: **research proposal, not implemented**.
 
 Five parallel research slices covered Tailored; resume-mcp and AARG; TypeSafe/Jev; rendering; and agent integration/Dreamwork. Repository findings are source inspections, not executed workflows. API values and product contracts below are illustrative unless identified as documented facts.

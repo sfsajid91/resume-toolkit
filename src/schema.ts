@@ -19,8 +19,10 @@ const entrySchema = z.strictObject({
   name: nonBlankString,
   title: nonBlankString.optional(),
   issuer: nonBlankString.optional(),
+  location: nonBlankString.optional(),
   start: nonBlankString.optional(),
   end: z.union([nonBlankString, z.null()]).optional(),
+  expires: nonBlankString.optional(),
   url: nonBlankString.optional(),
   bullets: z.array(claimSchema).max(100),
 });
@@ -78,6 +80,7 @@ const applicationShapeSchema = z.strictObject({
       category: nonBlankString.optional(),
       evidenceIds: z.array(idSchema),
     })).max(100),
+    skillsPosition: z.enum(["after-summary", "after-experience", "end"]).optional(),
   }),
   evidence: z.array(evidenceSchema).max(1_000).optional(),
   job: jobSchema.optional(),

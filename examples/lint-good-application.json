@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-lint-good",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Jordan Example",
+      "location": "Seattle, WA",
+      "links": []
+    },
+    "summary": [],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "id": "role-current",
+            "name": "Harbor Systems",
+            "title": "Software Engineer",
+            "location": "Seattle, WA",
+            "start": "2024-01",
+            "end": null,
+            "bullets": [
+              {
+                "id": "claim-latency",
+                "text": "Reduced API response time from 240 ms to 160 ms after replacing per record queries with one indexed lookup.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-release",
+                "text": "Automated weekly release checks for 18 services using TypeScript scripts and documented review steps.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-audit",
+                "text": "Shipped a PostgreSQL audit view used by 6 analysts to reconcile billing records each month.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "role-previous",
+            "name": "Cedar Analytics",
+            "title": "Software Developer",
+            "start": "2019-01",
+            "end": "2023-12",
+            "bullets": [
+              {
+                "id": "claim-loader",
+                "text": "Maintained a Python data loader that processed 12 monthly files and surfaced invalid rows before import.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-reconcile",
+                "text": "Added SQL reconciliation checks that reduced manual review from 90 minutes to 25 each week.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "projects",
+        "items": [
+          {
+            "id": "project-validator",
+            "name": "Release Input Validator",
+            "title": "Maintainer",
+            "start": "2024-04",
+            "end": "2025-06",
+            "url": "https://example.org/release-validator",
+            "bullets": [
+              {
+                "id": "claim-docker",
+                "text": "Created a Docker build workflow for 3 deployment targets and documented configuration for contributors.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-go",
+                "text": "Published a Go command that validates 12 sample records and prints actionable errors for maintainers.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "education",
+        "items": [
+          {
+            "id": "education",
+            "name": "University of Washington",
+            "title": "B.S. Computer Science",
+            "start": "2015-09",
+            "end": "2019-06",
+            "bullets": []
+          }
+        ]
+      },
+      {
+        "kind": "certifications",
+        "items": [
+          {
+            "id": "cert-cloud",
+            "name": "Cloud Administration Certificate",
+            "issuer": "Example Technical Institute",
+            "start": "2025-01",
+            "expires": "2030-01",
+            "bullets": []
+          }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-typescript", "label": "TypeScript", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-python", "label": "Python", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-sql", "label": "SQL", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-go", "label": "Go", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-java", "label": "Java", "category": "Languages", "evidenceIds": [] },
+      { "id": "skill-postgres", "label": "PostgreSQL", "category": "Data Stores", "evidenceIds": [] },
+      { "id": "skill-redis", "label": "Redis", "category": "Data Stores", "evidenceIds": [] },
+      { "id": "skill-sqlite", "label": "SQLite", "category": "Data Stores", "evidenceIds": [] },
+      { "id": "skill-dynamodb", "label": "DynamoDB", "category": "Data Stores", "evidenceIds": [] },
+      { "id": "skill-elasticsearch", "label": "Elasticsearch", "category": "Data Stores", "evidenceIds": [] },
+      { "id": "skill-docker", "label": "Docker", "category": "Delivery", "evidenceIds": [] },
+      { "id": "skill-kubernetes", "label": "Kubernetes", "category": "Delivery", "evidenceIds": [] },
+      { "id": "skill-aws", "label": "AWS", "category": "Delivery", "evidenceIds": [] },
+      { "id": "skill-terraform", "label": "Terraform", "category": "Delivery", "evidenceIds": [] },
+      { "id": "skill-actions", "label": "GitHub Actions", "category": "Delivery", "evidenceIds": [] }
+    ]
+  }
+}

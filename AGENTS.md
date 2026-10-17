@@ -4,7 +4,7 @@
 
 `resume-toolkit` is a local Bun/TypeScript CLI for validating agent-supplied resume data, optionally evaluating it with Jev, and exporting PDF/DOCX. The connected AI agent owns career context, tailoring, and revisions; the toolkit does not own a profile database or application workflow. The agent skill lives in `skills/resume-toolkit/SKILL.md`.
 
-**Current state:** Phases 1–4 local implementation are present, including source, tests, export assets, fixtures, the `schema`, `validate`, `evaluate`, and `render` commands, and the agent skill. The evaluation dry-run, local mock failure cases, and synthetic revision-to-export workflow are verified; an explicitly authorized live Jev answer/model/usage and cancellation check remain open. The workflow test simulates review findings rather than claiming live evaluation.
+**Current state:** The local CLI includes `schema`, `validate`, `lint`, `evaluate`, and `render`; strict schema version 1 supports optional `entry.location`, certification `entry.expires`, and `resume.skillsPosition`. The skill documents tailoring, review/fix, and render-only modes. Lint findings are warnings and do not change validation status/evidence linkage or block export. The evaluation dry-run, local mock failure cases, and synthetic revision-to-export workflow are verified; live Jev answer/model/usage and cancellation remain unverified.
 
 ## Architecture & Data Flow
 
@@ -27,10 +27,10 @@ Use one versioned `Application` snapshot as input. Strict Zod schemas define its
 ## Key Directories
 
 - `docs/` — product boundaries, contracts, implementation phases, and research.
-- `src/` — implemented CLI, schemas, validation/I/O, resolved resume/design, PDF/DOCX serializers, and evaluation.
+- `src/` — CLI, strict schemas, validation/lint/I/O, resolved resume/design, PDF/DOCX serializers, and evaluation.
 - `assets/` — trusted Typst template and licensed local fonts.
-- `skills/resume-toolkit/` — agent instructions for evidence-linked snapshots, consent, bounded revisions, and export/manual-edit boundaries.
-- `examples/` — synthetic application fixtures only.
+- `skills/resume-toolkit/` — skill, writing guide, and CLI/data/artifact references.
+- `examples/` — synthetic application and lint fixtures.
 
 ## Development Commands
 
@@ -41,7 +41,7 @@ bun test
 bun run src/cli.ts <command> [flags]
 ```
 
-There are no `package.json` scripts, build command, linter, or formatter. Do not assume `npm` or a published `resume-toolkit` executable. Implemented CLI operations are `schema`, `validate`, `evaluate`, and `render`; remote evaluation still requires explicit consent and a configured API key. See `docs/prototype-plan.md` for flags and output contracts.
+The package declares the `resume-toolkit` executable in its `bin` field; `bun run src/cli.ts <command> [flags]` is for development inside the repository. There are no `package.json` scripts or build command; `resume-toolkit lint` checks resume content, not TypeScript source. Remote evaluation still requires explicit consent and a configured API key. See `docs/prototype-plan.md` for flags and output contracts.
 
 ## Code Conventions & Common Patterns
 
@@ -53,7 +53,13 @@ There are no `package.json` scripts, build command, linter, or formatter. Do not
 
 ## Important Files
 
-- `package.json`, `bun.lock` — exact dependency versions and Bun lockfile; package scripts are not configured.
+- `package.json`, `bun.lock` — exact dependencies and Bun lockfile; package declares the `resume-toolkit` executable, with no package scripts.
+- `src/lint.ts`, `src/lint-terms.ts` — local resume lint rules and shared vocabulary.
+- `src/lint.test.ts`, `src/lint-fixtures.test.ts`, `src/skill.test.ts` — rule behavior, fixture-code coverage, and skill contract checks.
+- `skills/resume-toolkit/writing-guide.md` and `skills/resume-toolkit/references/` — writing, CLI, data, and artifact-review guidance.
+- `scripts/setup.sh` copies the canonical skill source into agent-specific destinations; edit `skills/resume-toolkit/`, never installed copies.
+- `examples/lint-bad-application.json`, `examples/lint-good-application.json` — synthetic lint/layout fixtures.
+- `docs/writing-guide-research.md` — source basis for the skill's editorial guidance.
 - `tsconfig.json` — TypeScript compiler settings.
 - `docs/prototype-plan.md` — concrete current specification, implementation layout, CLI contracts, and QA gates.
 - `docs/agent-tool-direction.md` — product boundary and revised architectural decisions.

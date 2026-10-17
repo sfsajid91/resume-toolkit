@@ -101,6 +101,25 @@ describe("CLI subprocess behavior", () => {
       await rm(directory, { recursive: true, force: true });
     }
   }, 15_000);
+  test("reports lint findings as warnings without changing valid status or exit code", () => {
+    const result = runCli(["lint", "--input", fixturePath, "--json"]);
+    expect(result.exitCode).toBe(0);
+    const output = parseObject(result.stdout);
+    expect(output.status).toBe("valid");
+    expect((output.issues as Array<Record<string, unknown>>).some((issue) =>
+      typeof issue.code === "string" && issue.code.startsWith("lint.") && issue.severity === "warning",
+    )).toBe(true);
+  });
+  test("clean lint reports no findings", () => {
+    const input = join(projectRoot, "examples", "lint-good-application.json");
+    const result = runCli(["lint", "--input", input, "--json"]);
+    expect(result.exitCode).toBe(0);
+    const output = parseObject(result.stdout);
+    expect(output.status).toBe("valid");
+    expect((output.issues as Array<Record<string, unknown>>).filter((issue) =>
+      typeof issue.code === "string" && issue.code.startsWith("lint."),
+    )).toEqual([]);
+  });
 
   test("rejects render flag and extension mismatches as usage errors", () => {
     const wrongExtension = runCli([
@@ -115,7 +134,7 @@ describe("CLI subprocess behavior", () => {
   test("renders through available exporters and protects outputs", async () => {
     const directory = await mkdtemp(join(tmpdir(), "resume-toolkit-render-cli-"));
     try {
-      const fixtures = ["application.json", "dense-application.json", "edge-application.json"] as const;
+      const fixtures = ["application.json", "dense-application.json", "edge-application.json", "lint-bad-application.json"] as const;
       const formats: readonly ("pdf" | "docx")[] = Bun.which("typst") === null ? ["docx"] : ["pdf", "docx"];
       for (const [index, name] of fixtures.entries()) {
         const input = join(projectRoot, "examples", name);
@@ -137,6 +156,9 @@ describe("CLI subprocess behavior", () => {
             inputHash: `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
           }));
           expect(typeof rendered.toolVersion).toBe("string");
+          expect((rendered.warnings as Array<Record<string, unknown>>).some((issue) =>
+            typeof issue.code === "string" && issue.code.startsWith("lint."),
+          )).toBe(true);
           expect(Array.isArray(rendered.warnings)).toBe(true);
           const artifact = await readFile(output);
           expect(artifact.subarray(0, 4).toString()).toBe(format === "pdf" ? "%PDF" : "PK\u0003\u0004");
@@ -197,7 +219,7 @@ describe("CLI subprocess behavior", () => {
     const conflict = runCli(["--help", "--version", "--json"]);
     const version = runCli(["--version", "--json"]);
     expect(version.exitCode).toBe(0);
-    expect(parseObject(version.stdout).version).toBe("0.1.2");
+    expect(parseObject(version.stdout).version).toBe("0.2.0");
     expect(conflict.exitCode).toBe(2);
     expect(parseObject(conflict.stdout).error).toEqual(expect.objectContaining({ code: "usage_error" }));
   });

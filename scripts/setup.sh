@@ -77,7 +77,9 @@ install_skill_copy() {
   local destination="$2"
   local current
   local source_file
+  local source_child
   local destination_file
+  local destination_directory
   [[ -f "$source/SKILL.md" ]] || fail "skill source is missing SKILL.md: $source"
   mkdir -p -- "$(dirname -- "$destination")"
   if [[ -L "$destination" ]]; then
@@ -92,6 +94,20 @@ install_skill_copy() {
     mkdir -- "$destination"
   fi
   for source_file in "$source"/*; do
+    if [[ -d "$source_file" && ! -L "$source_file" ]]; then
+      destination_directory="$destination/${source_file##*/}"
+      [[ ! -L "$destination_directory" ]] || fail "$destination_directory is a symlink; refusing to overwrite it."
+      [[ ! -e "$destination_directory" || -d "$destination_directory" ]] || fail "$destination_directory is not a directory."
+      mkdir -p -- "$destination_directory"
+      for source_child in "$source_file"/*; do
+        [[ -f "$source_child" && ! -L "$source_child" ]] || fail "unsupported skill source entry: $source_child"
+        destination_file="$destination_directory/${source_child##*/}"
+        [[ ! -L "$destination_file" ]] || fail "$destination_file is a symlink; refusing to overwrite it."
+        [[ ! -e "$destination_file" || -f "$destination_file" ]] || fail "$destination_file is not a regular file."
+        cp -p -- "$source_child" "$destination_file"
+      done
+      continue
+    fi
     [[ -f "$source_file" && ! -L "$source_file" ]] || fail "unsupported skill source entry: $source_file"
     destination_file="$destination/${source_file##*/}"
     [[ ! -L "$destination_file" ]] || fail "$destination_file is a symlink; refusing to overwrite it."

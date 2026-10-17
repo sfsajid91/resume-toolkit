@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-lint-bad",
+  "revision": 1,
+  "resume": {
+    "basics": {
+      "name": "Casey Example",
+      "location": "Portland, OR",
+      "links": []
+    },
+    "summary": [
+      {
+        "id": "summary-years",
+        "text": "Passionate product-minded engineer with a proven track record of building small dependable services for 6 years.",
+        "evidenceIds": []
+      },
+      {
+        "id": "summary-style",
+        "text": "Orchestrated a robust platform transition—without delays or customer impact.",
+        "evidenceIds": []
+      },
+      {
+        "id": "summary-scope",
+        "text": "Created a seamless workflow for the team.",
+        "evidenceIds": []
+      }
+    ],
+    "sections": [
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "id": "role-current",
+            "name": "Northstar — Recovery Systems",
+            "title": "Senior Engineer – Platform",
+            "location": "Portland, OR",
+            "start": "2023-01",
+            "end": null,
+            "bullets": [
+              {
+                "id": "claim-duplicate-a",
+                "text": "Built Docker deployment service for nightly batch jobs, recording status and preserving completed work across worker restarts.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-small",
+                "text": "Built a small dependable retry path for import workers, with explicit retry bounds and recovery notes for operations.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-without-a",
+                "text": "Partnered with product and design teams to improve the nightly import, without losing any events.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-three-a",
+                "text": "Built API, worker, and dashboard components for the release workflow, without any production incident.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-three-b",
+                "text": "Created API, queue, and scheduler tests for retries, protecting the service during rollback.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-dash",
+                "text": "Delivered TypeScript and Docker changes—supporting several teams—and wrote a dependable recovery guide.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-short",
+                "text": "Fixed tests.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "role-overlap",
+            "name": "Riverbank Analytics",
+            "title": "Software Engineer",
+            "start": "2020-01",
+            "end": "2024-01",
+            "bullets": [
+              {
+                "id": "claim-duplicate-b",
+                "text": "Built Docker deployment service for nightly batch jobs, recording status and preserving completed work across worker restarts.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-coordinated",
+                "text": "Coordinated a rollback review for the service and recorded the recovery plan for the release team.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "role-old-three",
+            "name": "Cedar Works",
+            "title": "Associate Developer",
+            "start": "2012-01",
+            "end": "2018-12",
+            "bullets": [
+              {
+                "id": "claim-old-one",
+                "text": "Maintained several internal deployment paths and carefully documented the procedures used by the operations group during scheduled releases, preserving context for engineers who inherited the systems later and handled subsequent maintenance rotations.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-old-two",
+                "text": "Reviewed proposed changes across shared service interfaces and recorded operational concerns in release notes for engineers responsible for later maintenance and support rotations during scheduled deployments, service handoffs, and changing ownership.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-old-three",
+                "text": "Supported infrastructure changes, wrote detailed runbooks, and preserved service behavior while several teams moved their workloads between environments and handed over ongoing support during later ownership transitions and scheduled releases.",
+                "evidenceIds": []
+              }
+            ]
+          },
+          {
+            "id": "role-old-four",
+            "name": "Pinecone Labs",
+            "title": "Software Developer",
+            "start": "2010-01",
+            "end": "2019-12",
+            "bullets": [
+              {
+                "id": "claim-old-four-a",
+                "text": "Migrated order processing workflows to a shared service, documented rollback decisions, and recorded operational checks for the teams maintaining the new boundary during later support rotations.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-old-four-b",
+                "text": "Maintained the older billing service and reviewed interface changes, then documented expected behavior for engineers handling ongoing maintenance and release preparation.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-old-four-c",
+                "text": "Updated batch processing procedures and described the recovery steps used by operations staff when a scheduled run stopped before completion.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-old-four-d",
+                "text": "Reviewed service requests with the support group and wrote migration notes for teams that inherited maintenance across shared systems.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "projects",
+        "items": [
+          {
+            "id": "project-long",
+            "name": "Multi Region Incident Response and Deployment Recovery Readiness Toolkit",
+            "title": "Creator",
+            "start": "2019-04",
+            "end": "2020-04",
+            "url": "https://example.org/projects/recovery-readiness-toolkit",
+            "bullets": [
+              {
+                "id": "claim-project-one",
+                "text": "Published a local project dashboard for deployment status, service ownership, and recent rollback activity.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-project-two",
+                "text": "Added sample configurations and recovery notes for contributors testing the project outside production environments.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-project-three",
+                "text": "Created validation checks to stop incomplete release metadata before the review process started.",
+                "evidenceIds": []
+              },
+              {
+                "id": "claim-project-four",
+                "text": "Documented safe retry behavior and rollback steps for the deployment utility.",
+                "evidenceIds": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "certifications",
+        "items": [
+          {
+            "id": "cert-expired",
+            "name": "Cloud Operations Credential",
+            "issuer": "Example Institute",
+            "start": "2018-03",
+            "expires": "2021-03",
+            "bullets": []
+          }
+        ]
+      }
+    ],
+    "skills": [
+      { "id": "skill-ts", "label": "TypeScript", "category": "Developer platforms", "evidenceIds": [] },
+      { "id": "skill-python", "label": "Python", "evidenceIds": [] },
+      { "id": "skill-postgres", "label": "PostgreSQL", "evidenceIds": [] }
+    ]
+  }
+}

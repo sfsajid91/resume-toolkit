@@ -18,7 +18,8 @@ describe("application contract and validation", () => {
     const result = validateApplication(fixture());
     expect(result.status).toBe("valid");
     expect(result.evidenceLinkage.status).toBe("complete");
-    expect(result.issues).toEqual([]);
+    expect(result.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    expect(result.issues).toContainEqual(expect.objectContaining({ code: "lint.skills_thin", severity: "warning" }));
 
     const bytes = await readFile(fixturePath);
     const loaded = await loadSnapshot(fixturePath.pathname);
@@ -266,19 +267,40 @@ describe("application contract and validation", () => {
     expect(unconfirmedResult.issues).toContainEqual(expect.objectContaining({ code: "evidence.unconfirmed", severity: "warning" }));
   });
 
-  test("accepts optional headline and skill categories but rejects blank values", () => {
-    const withOptionalFields = fixture();
-    withOptionalFields.resume.basics.headline = "Senior Engineer";
-    withOptionalFields.resume.skills[0]!.category = "Languages";
-    expect(applicationSchema.safeParse(withOptionalFields).success).toBe(true);
+  test("accepts optional location, skill position, and certification expiry fields", () => {
+    const application = fixture();
+    application.resume.sections[0]!.items[0]!.location = "Seattle, WA";
+    application.resume.skillsPosition = "after-summary";
+    application.resume.sections.push({
+      kind: "certifications",
+      items: [{
+        id: "cert-exp",
+        name: "Cloud Credential",
+        issuer: "Example Institute",
+        start: "2024-01",
+        expires: "2027-01",
+        bullets: [],
+      }],
+    });
+    expect(applicationSchema.safeParse(application).success).toBe(true);
 
-    const blankHeadline = fixture();
-    blankHeadline.resume.basics.headline = " ";
-    expect(applicationSchema.safeParse(blankHeadline).success).toBe(false);
-
-    const blankCategory = fixture();
-    blankCategory.resume.skills[0]!.category = " ";
-    expect(applicationSchema.safeParse(blankCategory).success).toBe(false);
+    const invalidExpiry = structuredClone(application);
+    invalidExpiry.resume.sections[1]!.items[0]!.expires = "2027-13";
+    expect(validateApplication(invalidExpiry).issues).toContainEqual(expect.objectContaining({
+      path: "/resume/sections/1/items/0/expires",
+      code: "date.invalid_month",
+      severity: "error",
+    }));
+    const misplacedExpiry = structuredClone(application);
+    misplacedExpiry.resume.sections[0]!.items[0]!.expires = "2027-01";
+    expect(validateApplication(misplacedExpiry).issues).toContainEqual(expect.objectContaining({
+      path: "/resume/sections/0/items/0/expires",
+      code: "entry.expires_certification_only",
+      severity: "error",
+    }));
+    const invalidPosition = structuredClone(application);
+    invalidPosition.resume.skillsPosition = "before" as never;
+    expect(applicationSchema.safeParse(invalidPosition).success).toBe(false);
   });
 
   test("detects missing resume content and exposes schema generation", () => {
@@ -295,6 +317,9 @@ describe("application contract and validation", () => {
     expect(generated).toContain('"maxLength":4000');
     expect(generated).toContain('"headline"');
     expect(generated).toContain('"category"');
+    expect(generated).toContain('"location"');
+    expect(generated).toContain('"expires"');
+    expect(generated).toContain('"skillsPosition"');
   });
 });
 

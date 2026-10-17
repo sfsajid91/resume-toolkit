@@ -14,14 +14,15 @@ import { validateApplication } from "./validate.ts";
 
 const USAGE = [
   "Usage:",
-  "  bun run src/cli.ts --help [--json]",
-  "  bun run src/cli.ts --version [--json]",
-  "  bun run src/cli.ts schema --kind application|report [--json]",
-  "  bun run src/cli.ts validate --input <path> [--json]",
-  "  bun run src/cli.ts evaluate --input <path> --dry-run [--json]",
-  "  bun run src/cli.ts evaluate --input <path> --allow-remote [--out report.json] [--force] [--json]",
-  "  bun run src/cli.ts render --input <path> --format pdf|docx --out <path> [--paper a4|letter] [--force] [--json]",
-  "  bun run src/cli.ts update [--json]",
+  "  resume-toolkit --help [--json]",
+  "  resume-toolkit --version [--json]",
+  "  resume-toolkit schema --kind application|report [--json]",
+  "  resume-toolkit validate --input <path> [--json]",
+  "  resume-toolkit lint --input <path> [--json]",
+  "  resume-toolkit evaluate --input <path> --dry-run [--json]",
+  "  resume-toolkit evaluate --input <path> --allow-remote [--out report.json] [--force] [--json]",
+  "  resume-toolkit render --input <path> --format pdf|docx --out <path> [--paper a4|letter] [--force] [--json]",
+  "  resume-toolkit update [--json]",
 ].join("\n");
 
 const OPTIONS = {
@@ -92,6 +93,7 @@ export async function runCli(args: readonly string[], runtime: CliRuntimeOptions
   const command = positionals[0];
   if (command === "schema") return runSchema(values);
   if (command === "validate") return runValidation(values);
+  if (command === "lint") return runValidation(values, true);
   if (command === "evaluate") return runEvaluation(values, runtime.evaluation ?? {}, runtime.stdout ?? ((text) => process.stdout.write(text)));
   if (command === "render") return runRender(values);
   if (command === "update") return hasCommandOptions(values) ? usageError(values.json) : runUpdate(values.json);
@@ -160,7 +162,7 @@ function runSchema(values: ParsedArguments["values"]): number {
   writeOutput(generateJsonSchema(kindResult.data), json);
   return 0;
 }
-async function runValidation(values: ParsedArguments["values"]): Promise<number> {
+async function runValidation(values: ParsedArguments["values"], lintOnly = false): Promise<number> {
   const { kind, input, out, format, paper, force, dryRun, allowRemote, json } = values;
   if (
     kind !== undefined || input === undefined || input.length === 0 || out !== undefined
@@ -177,7 +179,10 @@ async function runValidation(values: ParsedArguments["values"]): Promise<number>
   }
 
   const result = validateApplication(loaded.value);
-  const output: ValidationOutput = { ...result, inputHash: loaded.inputHash };
+  const issues = lintOnly && result.status === "valid"
+    ? result.issues.filter((issue) => issue.code.startsWith("lint."))
+    : result.issues;
+  const output: ValidationOutput = { ...result, issues, inputHash: loaded.inputHash };
   writeValidationOutput(output, json);
   return result.status === "valid" ? 0 : 1;
 }

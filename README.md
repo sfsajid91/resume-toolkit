@@ -1,6 +1,6 @@
 # Resume Toolkit
 
-A local Bun CLI for validating agent-supplied application snapshots, optionally evaluating them with Jev, and exporting PDF and editable DOCX resumes. The toolkit does not store or manage career history; the connected agent owns tailoring and revisions.
+A local Bun CLI for validating agent-supplied application snapshots, optionally evaluating them with Jev, and exporting PDF and editable DOCX resumes. Use it to tailor a resume to a job, review/fix an existing resume, or render a supplied snapshot only. The toolkit does not store or manage career history; the connected agent owns tailoring and revisions.
 
 ## Install
 
@@ -27,6 +27,9 @@ resume-toolkit schema --kind application --json
 resume-toolkit validate --input /path/to/application.json --json
 resume-toolkit render --input /path/to/application.json --format pdf --out resume.pdf --json
 resume-toolkit render --input /path/to/application.json --format docx --out resume.docx --json
+resume-toolkit lint --input /path/to/application.json --json
 ```
+
+`lint` reports local wording warnings; `validate` includes them without changing valid/invalid status or evidence linkage. Validation and lint warnings do not block exports or change exit codes.
 
 Validation and rendering work offline. Remote evaluation requires `TYPESAFE_API_KEY` and explicit `--allow-remote` consent. The workspace `.env.example` documents the optional key; copy it to `.env` only if remote evaluation is explicitly authorized.

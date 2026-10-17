@@ -20,8 +20,9 @@ describe("resolved resume", () => {
     ]);
     const experience = resolved.sections.find((section) => section.kind === "experience");
     if (experience === undefined || experience.kind === "skills") throw new Error("Dense fixture is missing experience.");
-    expect(experience.entries[0]?.name).toBe("Northstar Systems");
-    expect(experience.entries[0]?.dateRange).toBe("Apr 2022 – Present");
+    expect(experience.entries[0]?.heading).toBe("Senior Software Engineer");
+    expect(experience.entries[0]?.urlLabel).toBe("Northstar Systems");
+    expect(experience.entries[0]?.detail).toBe("");
     expect(resolved.summary[0]).toBe(application.resume.summary[0]?.text);
     expect(experience.entries[0]?.bullets[0]).toBe(application.resume.sections[0]?.items[0]?.bullets[0]?.text);
     expect(resolved.basics.links.map(({ label }) => label)).toEqual([
@@ -73,5 +74,49 @@ describe("resolved resume", () => {
       const application = await fixture(`../examples/${name}`);
       expect(applicationSchema.safeParse(application).success).toBe(true);
     }
+  });
+});
+describe("optional rendering fields", () => {
+  test("uses short month names and supports all skill positions", async () => {
+    const application = await fixture("../examples/dense-application.json");
+    const entry = application.resume.sections[0]!.items[0]!;
+    const expected = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    for (const [index, month] of expected.entries()) {
+      entry.start = `2024-${String(index + 1).padStart(2, "0")}`;
+      entry.end = entry.start;
+      const resolved = resolveResume(application);
+      const experience = resolved.sections.find((section) => section.kind === "experience");
+      if (experience === undefined || experience.kind === "skills") throw new Error("Missing experience section.");
+      expect(experience.entries[0]?.dateText).toBe(`${month} 2024 – ${month} 2024`);
+    }
+
+    application.resume.skillsPosition = "after-summary";
+    expect(resolveResume(application).sections[0]?.kind).toBe("skills");
+    application.resume.skillsPosition = "end";
+    expect(resolveResume(application).sections.at(-1)?.kind).toBe("skills");
+    delete application.resume.skillsPosition;
+    expect(resolveResume(application).sections[1]?.kind).toBe("skills");
+  });
+
+  test("renders location and certification issue/expiry dates", async () => {
+    const application = await fixture("../examples/dense-application.json");
+    application.resume.sections[0]!.items[0]!.location = "Seattle, WA";
+    const experience = resolveResume(application).sections.find((section) => section.kind === "experience");
+    if (experience === undefined || experience.kind === "skills") throw new Error("Missing experience section.");
+    expect(experience.entries[0]?.urlLabel).toBe("Northstar Systems, Seattle, WA");
+    expect(experience.entries[0]?.detail).toBe("");
+
+    const certificationSection = application.resume.sections.find((section) => section.kind === "certifications");
+    if (certificationSection === undefined) throw new Error("Missing certification section.");
+    const certification = certificationSection.items[0]!;
+    certification.expires = "2027-06";
+    delete certification.end;
+    const resolved = resolveResume(application).sections.find((section) => section.kind === "certifications");
+    if (resolved === undefined || resolved.kind === "skills") throw new Error("Missing resolved certification section.");
+    expect(resolved.entries[0]?.dateText).toBe("Issued Feb 2023 · Expires Jun 2027");
+    delete certification.expires;
+    const issuedOnly = resolveResume(application).sections.find((section) => section.kind === "certifications");
+    if (issuedOnly === undefined || issuedOnly.kind === "skills") throw new Error("Missing resolved certification section.");
+    expect(issuedOnly.entries[0]?.dateText).toBe("Issued Feb 2023");
   });
 });

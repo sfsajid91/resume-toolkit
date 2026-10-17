@@ -1,22 +1,20 @@
 # Resume Toolkit — Concrete Prototype Plan
 
-Status: Phases 1–4 local implementation and offline/simulated workflow verification complete. The authorized live Jev answer/model/usage and cancellation gate remains open.
+Status: Local validation, evaluation dry-run/mock failures, rendering, the three-mode skill, and warning-only lint are implemented; live Jev answer/model/usage and cancellation remain unverified.
 
 This is the build specification for the prototype. It refines [agent-tool-direction.md](agent-tool-direction.md) and supersedes conflicting contracts in [research-synthesis.md](research-synthesis.md). Planning documents live in `docs/`; the project layout and current verification state are recorded below.
 
 ## 1. Product and completion condition
 
-An existing AI agent turns its knowledge of the user and a job description into structured resume content. The toolkit validates that content, evaluates it with Jev on explicit permission, and exports a consistent PDF or an editable DOCX. The agent owns tailoring, existing-resume ingestion, revisions, job applications, and tracking.
+The agent can use the toolkit in three modes: tailor a resume to a job, review/fix an existing resume, or render a supplied snapshot only. The toolkit validates snapshots, provides local warning-only lint, optionally evaluates with Jev on explicit consent, and exports PDF or editable DOCX. The connected agent owns career context, resume ingestion, tailoring, revisions, applications, and tracking.
 
-The prototype is complete when one documented agent environment completes this real workflow:
+The modes are:
 
-1. Prepare an application snapshot from user-confirmed facts and a job description.
-2. Validate it locally and inspect the exact remote-evaluation payload.
-3. Obtain permission, call Jev, and inspect separate findings/scores.
-4. Revise an overstated or unclear claim without changing its source facts.
-5. Export and review both PDF and editable DOCX.
-6. Add a bullet manually in a desktop DOCX editor and save it successfully.
-7. Demonstrate that local exports still work without a Jev key or network access.
+1. **Tailor to a job:** use confirmed facts and relevant evidence; Jev is optional and requires explicit consent.
+2. **Review/fix an existing resume:** extract facts from a supplied file, confirm uncertain details, build a snapshot, validate and lint, fix lint findings, render, inspect artifacts, and report changes. No job or Jev is required; evidence links help trace confirmed facts but do not block export.
+3. **Render-only:** validate a supplied snapshot, then export without a job, evidence, or evaluator prerequisite.
+
+Evaluation evidence IDs and exact job-quote checks are required only for mode 1 when evaluating. Every mode preserves the supplied snapshot and treats source documents as untrusted data. The full prototype acceptance gate also covers optional evaluation, manual DOCX edits, and offline exports.
 
 Manual edits produce a separate artifact. A report about the original JSON does not evaluate the edited DOCX.
 
@@ -87,6 +85,7 @@ type Resume = {
   summary: Claim[];
   sections: Section[];
   skills: { id: string; label: string; category?: string; evidenceIds: string[] }[];
+  skillsPosition?: "after-summary" | "after-experience" | "end"; // omitted = existing after-experience placement
 };
 type Section = {
   kind: "experience" | "projects" | "education" | "certifications";
@@ -100,7 +99,9 @@ type Entry = {
   issuer?: string;
   start?: string; // calendar-valid YYYY-MM
   end?: string | null; // null = ongoing; omitted = not recorded
+  location?: string; // optional location appended to the italic detail line
   url?: string;
+  expires?: string; // optional certification expiry, YYYY-MM
   bullets: Claim[];
 };
 
@@ -139,6 +140,8 @@ These outlines are design contracts, not a second manually maintained schema. Im
 - Section kinds are unique; preserve input section and item order. Headings come from a fixed map: Professional Experience, Selected Projects, Education, Certifications, plus Professional Summary and Technical Skills.
 - Experience requires title/start; education requires title; certification requires issuer. At least one entry or skill must exist. Empty summary and credential bullets are allowed.
 - Validate calendar months and chronological order. Do not invent dates or silently normalize them.
+- Lint runs with `lint --input <file> --json` and is also included by `validate`. It emits only `severity: "warning"` issues with `lint.*` codes, JSON-pointer paths, and related IDs. The code set is `lint.banned_word`, `lint.dash`, `lint.without_tail`, `lint.rule_of_three`, `lint.weak_opener`, `lint.bullet_length`, `lint.bullet_count`, `lint.opener_repeat`, `lint.no_number`, `lint.duplicate_bullet`, `lint.repeated_theme`, `lint.summary`, `lint.skills_thin`, `lint.skill_not_in_body`, `lint.date_overlap`, and `lint.cert_expired`. Lint warnings do not change valid/invalid status, evidence linkage, exit codes, or export eligibility.
+- Optional input additions are `entry.location`, certification `entry.expires` (`YYYY-MM`), and `resume.skillsPosition`; they do not change `schemaVersion: 1`.
 - Web URLs allow `https:`/`http:` only; validate email separately. Reject unsafe schemes/control characters. Links are never fetched.
 - When evidence is supplied, every referenced evidence ID must resolve; entry bullets may reference only evidence belonging to that entry. Summary and skills may span entries.
 - When evidence is absent or a claim/skill has no evidence references, `validate`/`render` issue warnings but allow structurally valid exports. Explicitly report evidence linkage as unavailable/incomplete, never verified.
@@ -200,13 +203,14 @@ All example people/companies are synthetic. No illustrative judgment is represen
 
 ## 5. CLI contracts
 
-`resume-toolkit` is the working command name. During development the same arguments run through `bun run src/cli.ts`; no published executable is assumed.
+`resume-toolkit` is the installed CLI name declared in the package `bin` field. During development inside the repository, use `bun run src/cli.ts`; no published registry package is assumed.
 
 ```sh
 resume-toolkit schema --kind application --json
 resume-toolkit schema --kind report --json
 
 resume-toolkit validate --input application.v1.json --json
+resume-toolkit lint --input application.v1.json --json
 
 resume-toolkit evaluate --input application.v1.json --dry-run --json
 resume-toolkit evaluate --input application.v1.json \
@@ -222,9 +226,10 @@ resume-toolkit render --input application.v2.json \
 |---|---|
 | `schema` | Generated application/report JSON Schema; no files or network |
 | `validate` | Status, exact input hash, evidence-linkage status, locatable errors/warnings; no writes/network |
+| `lint` | `--input <file> --json`; returns validation status/linkage and locatable warning issues; warnings do not change status or exit code |
 | `evaluate --dry-run` | Local validation plus exact minimized request and egress disclosure; no API key/network/output file |
 | `evaluate --allow-remote` | Validate prerequisites, request Jev judgments, return report; optional explicit report write |
-| `render --format pdf\|docx` | Validate locally, resolve resume once, export one file, return path/format/hash/design/tool versions and warnings; no evaluation prerequisite |
+| `render --format pdf\|docx` | Validate locally, resolve resume once, export one file, return path/format/hash/design/tool versions and warnings; no evaluation prerequisite. Warnings do not block export; validation errors do |
 
 Common flags: `--help`, `--version`, `--json`. `--paper a4|letter` applies to both exports, default A4. `--force` is only for explicit output writes. Reject unknown/conflicting flags. Dry-run is mutually exclusive with live consent/output flags. Rendering requires a matching output extension.
 
@@ -238,17 +243,17 @@ Refuse input/output aliasing, including symlink aliases. Stage writes on the des
 
 ### One content model, two serializers
 
-A plain resolved resume model removes job/evidence metadata and retains selected content. Both serializers consume it. Source-section order is preserved; when skills exist, a `TECHNICAL SKILLS` section is inserted immediately after `PROFESSIONAL EXPERIENCE`, or before the first source section if experience is absent. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
+A plain resolved resume model removes job/evidence metadata and retains selected content. Both serializers consume it. Source-section order is preserved. Omitted `skillsPosition` inserts skills immediately after experience, or before the first source section when experience is absent; explicit `after-summary`, `after-experience`, and `end` placements are supported. A small `design.ts` owns shared font names, point sizes, margins, spacing, paper dimensions, and design version. This is a fixed specification, not user-configurable theming.
 
-Current design (version 2.3.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
+Current design (version 2.4.0): single-column, Cambria in DOCX and bundled Caladea for PDF. Caladea is Apache-2.0 licensed and metric-compatible with Cambria, so PDF output stays deterministic without redistributing Microsoft's font; recipient DOCX viewers still need Cambria or may substitute. Primary `#000000`, secondary `#222222`, 18 mm margins on all sides. The name is 19 pt, optional headline 12 pt, section headings 12 pt, all other regular text 11 pt, and bullets 10.5 pt. DOCX uses automatic `w:line=276` (1.15 × single); Typst uses 0.76em leading calibrated to Caladea's rendered line pitch and a 0.7em proportional trailing gap for paragraph/list spacing. No automatic font shrinking; support honest multipage output.
 
 The centered header uses a 19 pt bold uppercase name (2 pt after), optional 12 pt regular headline (3 pt after), 11 pt location/phone/email joined by ` | `, then 11 pt links joined by ` | `. Typst applies the same 0.7em font-size-proportional gap between stacked header rows. Generic labels and labels matching their link domain display the clean URL without `http://`, `https://`, or leading `www.`; explicit URL-style labels remain unchanged, and hyperlink targets remain the original URL. The header block ends with 8 pt spacing.
 
-Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 12 pt bold uppercase, full-width 0.6 pt black bottom rule, 8 pt before/3 pt after, and kept with following content.
+Section headings are `PROFESSIONAL SUMMARY`, `PROFESSIONAL EXPERIENCE`, `TECHNICAL SKILLS`, `SELECTED PROJECTS`, `EDUCATION`, and `CERTIFICATIONS`: 12 pt bold uppercase, full-width 0.6 pt black bottom rule, 12 pt before/4 pt after, and kept with the first entry header.
 
-Experience and education put the 11 pt bold role/title and 11 pt regular date range on one line, with the date flush right; Typst uses a two-column grid and DOCX one native right-aligned tab stop and one tab. The 11 pt italic company/institution follows on its own line with 3 pt after. Projects put an 11 pt bold name and optional URL/date on the first line, then optional 11 pt italic subtitle/tech stack with 3 pt after. Valid `YYYY-MM` inputs display as abbreviated month/year, joined with an en dash; source snapshots remain unchanged.
+All entry kinds use one header row: an 11 pt bold heading on the left and dates on the right. A following 11 pt italic detail line carries employer/institution/issuer and optional location appended as `, City`. Projects put the URL on this detail/subtitle line so it does not constrain the title; dates remain right-aligned. DOCX uses one native right-aligned tab stop; Typst uses a two-column grid. Dates use English month abbreviations `Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec`. Certifications display `Issued Mon YYYY` and optional `Expires Mon YYYY`, never a range.
 
-Summary claims are joined with one space into a single 11 pt paragraph with 3 pt after. Skills use 11 pt text and 2 pt after: one paragraph per category in first-appearance order, with a bold category name followed by comma-separated regular labels; uncategorized skills use bold `Skills:`. Bullets are 10.5 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have 6 pt separation. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst bundles Caladea and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX declares Cambria; exact display remains dependent on recipient font availability. No photo, icons, skill bars, content tables, or floating shapes.
+Summary claims are joined with one space into a single 11 pt paragraph with 3 pt after. Skills use 11 pt text and 2 pt after: one paragraph per category in first-appearance order, with a bold category name followed by comma-separated regular labels; uncategorized skills use bold `Skills:`. Bullets are 10.5 pt with a 4.5 mm hanging indent and 2 pt between bullets; entries have a 4 pt inter-entry gap. Use local Droid Sans Fallback Full (Apache 2.0) for CJK and Noto Emoji (OFL 1.1 and Apache 2.0) for glyph fallbacks. Typst bundles Caladea and embeds used subsets. Visual inspection covered accented Latin, Greek, CJK, and U+1F9EA; this does not guarantee universal glyph coverage. DOCX declares Cambria; exact display remains dependent on recipient font availability. No photo, icons, skill bars, content tables, or floating shapes.
 
 PDF and DOCX must preserve the same wording, section order, links, and visual hierarchy. Exact line wrapping and page-count parity are not acceptance requirements: Word processors and Typst have different layout engines.
 
@@ -328,25 +333,34 @@ Create files only as their phase needs them; this is not permission to generate 
 │   ├── prd-idea.md
 │   ├── prototype-plan.md
 │   └── research-synthesis.md
-├── src/                         # Add modules with Phase 1; no empty scaffold
+├── src/                         # CLI, schemas, validation/lint, renderers, and tests
 │   ├── cli.ts
 │   ├── schema.ts
 │   ├── validate.ts
+│   ├── lint.ts
+│   ├── lint-terms.ts
 │   ├── io.ts
 │   ├── resume.ts
 │   ├── design.ts
 │   ├── pdf.ts
 │   ├── docx.ts
-│   └── evaluate.ts
+│   ├── evaluate.ts
+│   ├── lint.test.ts
+│   ├── lint-fixtures.test.ts
+│   └── skill.test.ts
 ├── assets/                      # Add with export implementation
 │   ├── resume.typ
 │   └── fonts/                   # Licensed files and notices
-├── skills/resume-toolkit/       # Add with Phase 4
-│   └── SKILL.md
+├── skills/resume-toolkit/
+│   ├── SKILL.md
+│   ├── writing-guide.md
+│   └── references/             # CLI, data conventions, and artifact review
 └── examples/                    # Synthetic fixtures only
     ├── application.json
     ├── dense-application.json
-    └── edge-application.json
+    ├── edge-application.json
+    ├── lint-bad-application.json
+    └── lint-good-application.json
 ```
 
 Use plain functions, direct imports, and explicit format dispatch. No generic renderer/evaluator interfaces. Add a few behavior-oriented Bun tests alongside the owning modules when failure modes justify them.
@@ -356,7 +370,7 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 | Phase | Work | Gate before proceeding |
 |---|---|---|
 | **0 — feasibility** | Disposable Bun experiments: Typst PDF; `docx` generation; SDK import and authorized synthetic call/cancellation. Select compiler/package/font versions. | Actual PDF compilation and text/link/layout inspection; DOCX opens and permits a saved/reopened edit in Writer; real Jev answer/model/usage observed. Missing credentials block only the live gate, not reachable local work. |
-| **1 — contracts and validation** | Implement strict schemas, JSON Schema output, input snapshot/hash, issues, CLI help and `validate`. Commit synthetic example. | CLI handles valid snapshot, bad version/date/quote/link, wrong-entry refs, duplicate IDs, missing evidence warnings; input unchanged and no network. |
+| **1 — contracts, validation, and lint** | Implement strict schemas, JSON Schema output, input snapshot/hash, issues, CLI help, `validate`, and local warning-only lint. Commit synthetic examples. | CLI handles valid snapshot, invalid schema/date/quote/link/reference cases, and lint warning-only behavior; input unchanged and no network. |
 | **2 — exports** | Resolve model, shared design, Typst template, native DOCX styles/lists/links, both paper sizes, safe writes and errors. | Actual compact/multipage/edge CLI exports; matching selected text/order across formats; usable links, no clipping/lost content, successful manual DOCX edit; exports work offline without API key. |
 | **3 — evaluation** | Versioned rubric, exact dry-run, consent, SDK integration, total deadline, response validation, report output. | Authorized live synthetic call plus controlled invalid-answer/auth/timeout scenarios; target-linked findings/scores observed; unavailable evaluation is distinct from low scores. |
 | **4 — agent workflow** | Skill setup, contracts, ingestion responsibility, bounded revisions and human-review guidance. Exercise one installed shell-capable agent. | Agent produces snapshot, fixes validation, obtains remote consent, revises a claim after findings, exports both formats, and explains manual-edit/report boundaries. Name the tested environment; no universal-agent claim. |
@@ -365,8 +379,9 @@ Use plain functions, direct imports, and explicit format dispatch. No generic re
 ### Implementation progress
 
 Phase 0 remains open only for an authorized live Jev request/cancellation check. Phase 2 local exports and the LibreOffice Writer edit/save/reopen check are complete.
+The skill covers tailoring, review/fix, and render-only paths. Local lint warnings do not change validation status/evidence linkage, exit codes, or export eligibility. Optional `entry.location`, certification `entry.expires`, and `resume.skillsPosition` retain `schemaVersion: 1`; the renderer is design 2.4.0. Live Jev remains unverified and was not run for this rework.
 
-1. **Completed — Phase 1: contracts and validation.** Implemented strict Zod application/report schemas, generated JSON Schema, one-time input snapshots/hashes, locatable issues, `schema`/`validate` CLI behavior, the synthetic fixture, and focused Bun tests. **Gate:** `bunx tsc --noEmit` and `bun test` pass; subprocess checks exercise exit codes 0, 1, 2, and 4, evidence warnings, and unchanged fixture bytes.
+1. **Completed — Phase 1: contracts, validation, and lint.** Strict Zod schemas, JSON Schema output, one-time input snapshots/hashes, locatable issues, `schema`, `validate`, and warning-only `lint` CLI behavior. Optional schema additions remain version 1. Current verification is recorded below; no live Jev request was made.
 
 2. **Completed — Phase 2: local exports.** Implemented the ordered resolved model and fixed design, trusted JSON Typst template, native editable DOCX, local licensed fonts, staged safe writes, CLI `render`, A4/Letter, and compact/dense/edge examples. **Gate:** final CLI tests rendered all three fixtures in both formats; `pdftotext`/`pdfinfo` confirmed selectable content, paper sizes, two-page dense layout, and link annotations; PDF pages were visually inspected; Writer save/reopen retained native bullet style and numbering; rendering stayed offline.
 
@@ -385,6 +400,7 @@ Keep routine tests focused on plausible consumer-visible defects, not implementa
 | Unknown/misowned evidence, duplicate IDs, invalid months and quotes | Stable error category and correct pointer; evaluation never sends invalid data |
 | No evidence / unconfirmed evidence | Explicit unavailable-linkage/review warnings; no false truth claim |
 | Render-only snapshot without job/key | Both exports succeed; no remote evaluator access |
+| Lint warnings in valid snapshots | All lint codes are `warning`; valid/invalid status, evidence linkage, exit codes, and successful export remain unchanged |
 | Dry-run and missing consent | Exact preview works offline; no network when consent absent |
 | Missing answers, wrong types/probabilities, auth and timeout | Unavailable evaluation and nonzero exit, no invented findings |
 | Compact, dense multipage, long strings and Unicode | Selected content survives both exports; correct paper; readable layout and documented glyph coverage |
@@ -399,7 +415,7 @@ Use a few realistic support examples plus mutations of magnitude/ownership and m
 
 ## 11. Prerequisites and current verification
 
-The initial project setup consists of a private Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Phase 1 added `src/schema.ts`, `src/io.ts`, `src/validate.ts`, `src/cli.ts`, focused `bun:test` suites, and the synthetic application fixture. Phase 2 added the shared resolved resume/design, staged writes, both local serializers, Typst template and licensed font assets, export fixtures, `render`, and focused tests. Phase 3 added `src/evaluate.ts`, the `evaluate` CLI mode, and loopback-backed evaluation tests. Phase 4 added the agent skill and `src/workflow.test.ts` lifecycle regression.
+The repository contains the Bun package, exact dependency pins, `bun.lock`, `tsconfig.json`, `.gitignore`, and planning documents under `docs/`. Source includes strict schemas, snapshot I/O, validation and local lint (`src/lint.ts`, `src/lint-terms.ts`), the shared resolved resume/design, both serializers, evaluation, and focused tests including lint-fixture and skill-contract coverage. The canonical skill and its references live under `skills/resume-toolkit/`; `scripts/setup.sh` copies them to installed locations.
 
 ### Observed local smoke checks
 
@@ -408,7 +424,8 @@ The initial project setup consists of a private Bun package, exact dependency pi
 - `docx` 9.10.0 rendered both fixtures at A4 and Letter. OOXML inspection verified 15/16 mm margins, centered header styles, 276-twip line spacing, section rules, right-tab positions at the printable widths (10092 A4 / 10426 Letter), and exactly one native tab run per date row with no tab characters in text runs. LibreOffice Writer edited, saved, and reopened a v2.0 dense A4 DOCX; the `Resume Bullet` style and numbering level 0 remained intact. LibreOffice is verification-only, not a runtime dependency.
 - `@typesafe-ai/sdk` 0.6.0 is available under Bun. The final evaluation tests used only a local mock service; no successful live Jev result or cancellation has been observed.
 - The repository dependency smoke test imported `docx`, Zod, and `@typesafe-ai/sdk`, instantiated the SDK client without making a request, and parsed a small strict Zod value.
-- Current local gate: `bunx tsc --noEmit` passed; `bun test` passed (35 tests across eight files); the actual `evaluate --dry-run --json` CLI returned `status: "dry_run"` with no API key or network access.
+- Final local gate: `bun x tsc --noEmit` passed; `bun test` passed (68 tests across 12 files, 583 assertions). All five `examples/*.json` files rendered to PDF and DOCX; PDFs were rasterized and inspected, and DOCX previews were converted and inspected. The skill-copy smoke test confirmed `scripts/setup.sh` copied `SKILL.md` and reference files into an isolated temporary HOME. PDF bullet-text starts matched across pages (x=68.65253 pt on pages 1 and 2); DOCX page previews matched (x=63.85 pt). No bullet-indent correction was needed. Live Jev was not run per instruction and remains unverified.
+- Baseline before this rework: `bun install --frozen-lockfile` checked 28 installs across 48 packages with no changes; `bun x tsc --noEmit` passed; `bun test` passed (40 tests, 468 assertions, nine files). All three original examples rendered as PDF/DOCX; PDF pages were rasterized and visually inspected.
 - Phase 4 local gate was exercised by the omp shell-capable coding agent on Linux x86_64 with Bun 1.4.2, Typst 0.15.1, Poppler `pdftotext` 26.01.0, and UnZip 6.00. The workflow test requires both export tools rather than silently skipping PDF verification. Its renders run with an empty `TYPESAFE_API_KEY` and preloaded network-denial guards. A separate actual CLI smoke run also produced distinct v1/v2 hashes, preserved v1 bytes, and extracted the corrected claim from both exports with no remote evaluation. Skill YAML frontmatter parsed successfully. These checks do not establish compatibility with other agent environments.
 
 These are local product CLI checks, not the remaining Phase 0/3 live-evaluation gate. An authorized synthetic Jev request, live response/model/usage, and cancellation remain open. No findings or usage are fabricated.

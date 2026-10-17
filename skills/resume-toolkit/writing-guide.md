@@ -1,97 +1,68 @@
 # Engineering Resume Writing Guide
 
-Read this guide before drafting or revising `resume.summary` or any entry's `bullets`. It sets a strict editorial standard for concise, evidence-backed engineering resumes; it does not change the JSON schema or guarantee a Jev score.
+Apply these rules when drafting or revising summaries, bullets, dates, skills, and layout. This guide is editorial advice, not a schema guarantee or promise of a Jev score. Research basis: [writing-guide-research.md](../../docs/writing-guide-research.md).
 
-The target is Jev clarity **2** (a clear contribution and context) and relevance **2** (content prominently aligned with the job requirements). For each evaluated claim, `supported` means the attached evidence directly supports the claim without adding unsupported scope. Jev judges those criteria separately; no wording formula can guarantee its judgments. See `src/evaluate.ts` and the current contract in `docs/prototype-plan.md` §7.
+## Rules
 
-## 1. Select and prioritize evidence
+### Select only relevant, supported material
 
-1. Read `job.requirements`; order them `required`, then `preferred`, then `unspecified`. For each, identify the exact `evidence` records that support a relevant entry, bullet, or skill. Prioritize the strongest direct evidence for required requirements first. Use preferred requirements when supported. Include unspecified requirements only when they clearly improve fit. Never imply that an unsupported requirement is met.
-2. Select only entries and achievements that demonstrate those requirements. Order included experience/projects by relevance and strength, not by how much career history is available. Remove unrelated or repetitive material; relevance level 2 means prominently aligned content, not a complete chronology.
-3. Aim for **4–5 bullets** in a flagship or recent role and **2–3** in an older or secondary entry. These are editing targets, not quotas: use fewer when evidence does not support distinct, relevant achievements. Do not pad a role or invent achievements to hit a count.
-4. Default `resume.summary` to `[]` for IC, junior, and mid-level engineers. For a senior-level transition where a short orientation is useful, use at most **1–2 factual claims**, each tied to evidence and free of self-praise or adjectives. An empty summary is valid in the schema.
-5. Mirror exact technical terms from supported job requirements in context—such as **PostgreSQL**, **Docker**, or **Playwright**. Keep spelling/capitalization faithful where practical. A keyword belongs in a bullet or `resume.skills` only when attached evidence supports its use; do not keyword-stuff, infer proficiency, or add a tool solely to match the posting.
+- Prioritize evidence for required job requirements, then preferred requirements, then other relevant evidence. Never imply an unsupported qualification.
+- Target one page for up to about 10 years of experience; never exceed two pages. Roles more than 10 years old get one or two bullets, or one line. Projects more than four years old without adoption evidence get one or two bullets or are dropped.
+- Use at most three bullets per project. Include fewer bullets when evidence does not support distinct, relevant accomplishments.
+- Avoid near-duplicate bullets. Do not repeat rollback, retry, recovery, or “safe” themes across unrelated roles; show those themes only where they are genuinely distinct and relevant.
+- Default the summary to empty. If useful, include one or two factual claims, including one concrete, evidenced result. A years-of-experience claim must match the earliest supported start date. Avoid self-praise.
+- Use specific supported technical terms in context; do not keyword-stuff or infer proficiency from a title, job description, or tool name.
 
-## 2. Write varied, evidence-backed XYZ bullets
+### Write bullets with a clear contribution
 
-Each bullet is one coherent achievement, normally **15–28 words**. Include all three parts, in any order:
+- Target **12–30 words** per bullet. One-line and two-line bullets are both expected; do not pad or compress merely to force uniform line lengths.
+- State **X** (the outcome or change) and **Z** (the candidate's action/mechanism). Include **Y** only when evidence supplies a number, scale, scope, or boundary. Never invent a metric or imply unsupported causality.
+- Keep action, context, and outcome precise. Use a concrete before/after or system boundary when no numeric result exists. If evidence does not establish an outcome, ask the user or omit the claim.
+- Use past tense for completed work and present tense only for an ongoing state. Vary openings; make personal contribution distinct from team outcomes. Attribute team results to the team. Say “Led” only when evidence establishes leadership.
+- Never force “by doing” or “while” tails. Avoid generic filler and “without X” tails unless the contrast is material, factual, and necessary.
+- Never use em dashes; do not use en dashes outside date ranges. Avoid decorative punctuation and formulaic tails. Use ordinary hyphens only when required by a proper name or compound term.
 
-- **X — Impact/outcome:** what changed, shipped, became possible, or was delivered.
-- **Y — Measure/scale/scope:** a defensible result, baseline, count, frequency, workload, boundary, or system scope.
-- **Z — Mechanism:** the engineering action, design, or supported tools that produced the outcome.
+### Summary, skills, dates, and credentials
 
-Use the XYZ idea—“accomplished X, measured by Y, by doing Z”—as a completeness check, not a fill-in-the-blanks sentence template. One supported count or architecture boundary can make Y concrete when no percentage or business metric exists. If the evidence has no numeric outcome, quantify only a sourced scale or describe a specific before/after mechanism. Never invent a number, imply causation the evidence does not establish, or substitute vague filler such as “significantly improved performance.” If the evidence cannot support an impact, scope, or mechanism, ask for clarification or omit the claim.
+- Keep the summary empty unless it adds useful orientation. If included, use one or two evidence-backed claims, one concrete evidenced result, and a years claim that agrees with the earliest start date.
+- Use **3–5 skill category lines** with **5–8 items per category**. Use real tools and technologies, not broad domains such as “developer platforms.” Every skill implied by two or more bullets must appear in skills. Place skills after the summary for engineering roles.
+- Keep dates consistent in display as `Mon YYYY`; snapshot dates use `YYYY-MM`, and null end dates display as `Present`.
+- Certifications show `Issued Mon YYYY` or `Expires Mon YYYY`, never a date range. Drop expired certifications unless relevant.
+- Omit education dates only when the education is more than 10 years old and the user agrees.
+- Include the user's supplied location in the location field; never infer one. Choose section order with the section-order option when available.
 
-Describe architecture through concrete boundaries and changes: services/components connected, data or request flow, integrations replaced, deployment or migration scope, failure handling, or interfaces affected. State a measurable result if evidence provides one; otherwise show the verified technical scope and the actual resulting change. Do not call a design “scalable,” “reliable,” or “high-performance” without evidence that establishes what that means.
+### Banned language and patterns
 
-**Vary sentence openings. Never use the same structure in consecutive bullets. Rotate these shapes while retaining X, Y, and Z:**
+Avoid all listed terms and phrases case-insensitively, including obvious tense, plural, and spelling variants. Preserve proper names and source evidence; revise generated resume text, not the facts. The list is a strict editing convention, not evidence that a word automatically triggers rejection by recruiters or ATS.
 
-Illustrative evidence for these three structures: dashboard refreshes ran through 14 REST polling hooks; an implementation replaced those hooks with one WebSocket connection used for dashboard updates.
+Banned terms (lint terms): `spearhead`, `spearheads`, `spearheaded`, `spearheading`, `orchestrate`, `orchestrates`, `orchestrated`, `orchestrating`, `leverage`, `leverages`, `leveraged`, `leveraging`, `utilize`, `utilizes`, `utilized`, `utilizing`, `catalyze`, `catalyzes`, `catalyzed`, `catalyzing`, `synergize`, `synergizes`, `synergized`, `synergizing`, `revolutionize`, `revolutionizes`, `revolutionized`, `revolutionizing`, `pioneer`, `pioneers`, `pioneered`, `pioneering`, `champion`, `champions`, `championed`, `championing`, `foster`, `fosters`, `fostered`, `fostering`, `delve`, `delves`, `delved`, `delving`, `harness`, `harnesses`, `harnessed`, `harnessing`, `empower`, `empowers`, `empowered`, `empowering`, `elevate`, `elevates`, `elevated`, `elevating`, `unveil`, `unveils`, `unveiled`, `unveiling`, `seamless`, `seamlessly`, `robust`, `robustly`, `robustness`, `cutting-edge`, `cutting edge`, `state-of-the-art`, `state of the art`, `dynamic`, `dynamically`, `results-driven`, `result-driven`, `results driven`, `result driven`, `passionate`, `passionately`, `detail-oriented`, `detail oriented`, `team player`, `team players`, `thought leader`, `thought leaders`, `fast-paced`, `fast paced`, `paradigm-shifting`, `paradigm shifting`, `responsible for`, `duties included`, `worked on`, `helped with`, `assisted in`, `enhancing operational efficiency`, `driving business growth`, `ensuring seamless user experience`, `proven track record`, `proven track records`, `small`, `smaller`, `smallest`, `dependable`, `dependably`, `dependability`, `product-minded`, `product minded`, `significantly improved performance`, `significantly improves performance`, `significantly improving performance`.
 
-- **Action-first:** `Replaced 14 REST polling hooks with one WebSocket connection, consolidating dashboard updates into a single transport.`
-- **Result-first:** `Dashboard updates moved from 14 REST polling hooks to one WebSocket connection, consolidating the client update path.`
-- **Mechanism/scale-first:** `Across 14 REST polling hooks, replaced dashboard polling with one WebSocket connection, consolidating updates through a single transport.`
+Limit trailing “without …” clauses to one per resume and rule-of-three lists to two per resume. Avoid weak openers “Partnered with,” “Collaborated with,” “Worked with,” “Coordinated,” and “Contributed to” unless they name the true scope. Also avoid repetitive sentence openings, inflated unmeasured impact, unsubstantiated disclaimers, dangling fluff tails, and generic claims with no candidate-specific detail. Lint's clean result does not imply Jev clarity or relevance 2/2.
 
-These structures share the same illustrative evidence, not a candidate fact. Use only the details an actual evidence record establishes. The variation is deliberate: strong bullets need not all begin with identical “Built/Implemented…” syntax. Keep the action identifiable and the wording natural.
+### Final review
 
-Use past tense for completed achievements, including completed work in a current role. Use present tense only for a genuinely ongoing state; do not mix tenses inside one bullet. Prefer one sentence and no first-person pronouns. Remove setup that does not help a reader understand the accomplishment. The 15–28-word bound is this guide's editing constraint, not a schema limit or a Jev rubric rule.
+- Can each claim be traced to confirmed facts without claiming more than they establish?
+- Does every bullet state X and Z, and include Y only when evidence supports its measure or scope?
+- Are team ownership, dates, tools, and outcomes accurate?
+- Are relevance, length, page count, and skill-category limits respected?
+- Have all lint findings been fixed and lint rerun to clean?
 
-## 3. Banned vocabulary and AI-slop audit
+## Synthetic before-and-after examples
 
-Treat this list as a strict project editing rule for generated summary/bullet prose, not as proof that every recruiter or ATS automatically rejects any individual word. Search case-insensitively, including obvious tense/plural variants, before saving a snapshot or running `validate` or `evaluate`. Rewrite a hit in plain, specific language. Preserve original evidence and factual proper names; do not edit source material to make an audit pass.
+Every example below uses synthetic evidence, not candidate facts.
 
-**Banned AI verbs:** *Spearheaded, Orchestrated, Leveraged, Utilized, Catalyzed, Synergized, Revolutionized, Pioneered, Championed, Fostered, Delved, Harnessed, Empowered, Elevate, Unveil.*
+Synthetic summary examples:
 
-**Banned empty adjectives/clichés:** *Seamless, Robust, Cutting-edge, State-of-the-art, Dynamic, Results-driven, Passionate, Detail-oriented, Team player, Thought leader, Fast-paced, Paradigm-shifting.*
+- **Bad:** “Product-minded engineer with a proven track record of transforming teams and delivering innovative solutions.” Empty self-praise, unsupported broad claims, and banned language.
+- **Good:** “Software engineer with 8 years of experience; reduced a documented deployment workflow from 30 minutes to 8.” Synthetic facts: earliest role began January 2018; evidence records the before-and-after duration. The single result is concrete and the years claim matches the start date.
 
-**Banned passive openings:** *Responsible for, Duties included, Worked on, Helped with, Assisted in.*
-
-**Banned dangling fluff tails:** *“enhancing operational efficiency,” “driving business growth,” “ensuring seamless user experience,”* and similar claims that add no specific, evidenced result.
-
-Prefer plain engineering verbs when accurate: **Built, Implemented, Designed, Architected, Shipped, Launched, Automated, Refactored, Reduced, Cut, Migrated, Debugged, Eliminated, Integrated, Mentored, Led, Co-developed.** Pick the verb that describes the candidate's actual action; a stronger-sounding verb must never inflate ownership.
-
-Other AI-slop signals are repetitive sentence openings, inflated but unmeasured impact, generic “proven track record” language, tool lists without application, and claims that could describe any engineer. Vary cadence, name the actual system or workflow, and retain details a candidate could explain in an interview. Research does not establish a universal vocabulary that triggers automatic rejection; the goal is credible, specific writing, not detector evasion.
-
-## 4. Attribution and provenance
-
-- Every summary/bullet claim and selected skill needs relevant `evidenceIds` for evaluation. Attach the evidence that supports the whole claim, not merely one keyword. A reference is traceability, not truth verification; read the attached fact and preserve its boundaries.
-- Keep personal contribution distinct from team outcomes. Say **Led** only when evidence establishes leadership; otherwise name the actual contribution (for example, **Co-developed**, **Implemented**, or **Contributed to**) and attribute a team-level result to the team. Do not turn “team shipped” into “I led” or claim sole credit for shared work.
-- Do not infer an outcome from a tool name, job title, project label, or the fact that a task was assigned. Unsupported claim details are not repaired by adding more evidence IDs. If a metric is missing, ask the user rather than estimate.
-- Treat unconfirmed evidence as unconfirmed. Do not strengthen its wording, borrow facts from another entry for an entry bullet, or let the job description serve as evidence.
-
-### Before and after
-
-The following examples use **synthetic evidence** and illustrate rewriting, not verified candidate accomplishments.
-
-| Weak draft | Attached evidence | Evidence-linked rewrite |
+| Weak draft | Synthetic evidence | Rewrite |
 |---|---|---|
-| “Responsible for backend services.” | `fact-ws`: “Replaced 14 REST polling hooks in the dashboard with one WebSocket connection; dashboard updates use that connection.” | “Replaced 14 REST polling hooks with one WebSocket connection, consolidating dashboard updates into a single transport.” |
-| “Spearheaded a robust, cutting-edge modernization that significantly improved performance.” | `fact-tests`: “On a three-engineer team, I wrote Playwright integration tests for 12 checkout flows; release notes recorded coverage for all 12. I did not lead the project.” | “Implemented Playwright integration tests for 12 checkout flows as part of a three-engineer team; release notes recorded coverage across all 12 flows.” |
+| “Responsible for backend services.” | Replaced 14 REST polling hooks in a dashboard with one WebSocket connection; dashboard updates use that connection. | Replaced 14 REST polling hooks with one WebSocket connection, consolidating dashboard updates into a single transport. |
+| “Spearheaded a robust, cutting-edge modernization that significantly improved performance.” | On a three-engineer team, the candidate wrote Playwright integration tests for 12 checkout flows; release notes recorded coverage for all 12. Candidate did not lead. | Implemented Playwright integration tests for 12 checkout flows on a three-engineer team; release notes recorded coverage across all 12 flows. |
+| “Built a small dependable service that was easy to use.” | Candidate built an API service; no user feedback or service-size measure was recorded. | Built an API service that exposes order status through a documented endpoint. |
+| “Led a complete platform migration that transformed deployment.” | Candidate migrated the billing worker with two teammates; the team shipped it to production. No leadership role was recorded. | Migrated the billing worker with two teammates and shipped it to production as a team. |
+| “Reduced nightly import failures by adding retries, without any data loss.” | Candidate added bounded retries to the nightly import; the failure count fell from 20 to 4 per week. No data-loss comparison was recorded. | Added bounded retries to the nightly import, reducing recorded failures from 20 to 4 per week. |
+| “Worked on the search service and improved its performance.” | Candidate replaced a per-result lookup with one batched query in the search service; the query path now makes one database request. | Replaced per-result lookups with one batched query, reducing the search service's database request path to one call. |
 
-The first rewrite reports the evidenced replacement and scope; the second preserves the documented team attribution and drops unsupported superlatives. If evidence did not establish the outcome or ownership in a rewrite, remove it or ask—never complete the story by guessing.
-
-## 5. Final claim-by-claim check
-
-Before saving a new or revised snapshot:
-
-- Does every selected item help demonstrate a required or preferred job requirement?
-- Does each bullet contain a clear outcome, supported measure/scope, and technical mechanism in 15–28 words?
-- Do adjacent bullets use different opening structures?
-- Are every number, tool, impact, and ownership verb supported by attached evidence?
-- Are exact job keywords present only where evidence supports them?
-- Is the summary empty by default, or limited to 1–2 evidence-backed facts for a senior-level transition?
-- Did the banned-vocabulary/fluff audit pass without altering evidence or proper names?
-
-Then run local validation. Jev's 2/2 clarity and relevance are evaluation targets, not promises. Review actual criterion findings separately; revise only within the evidence and the existing bounded workflow in `SKILL.md`.
-
-## Research basis
-
-These sources inform the guidance; resume conventions are editorial advice, not guarantees of screening outcomes. Direct fetching of the Reddit wiki returned 403 during research, so its indexed guidance is cross-checked below against university career offices and engineering-specific sources.
-
-- [r/EngineeringResumes wiki](https://www.reddit.com/r/EngineeringResumes/wiki/index/), [software guide](https://www.reddit.com/r/EngineeringResumes/wiki/software/), and [checklist](https://www.reddit.com/r/EngineeringResumes/wiki/checklist/) — accomplishment-focused bullets, XYZ/STAR/CAR, relevance ordering, concise writing, and concrete technical context.
-- [UT Austin Career Services: Strong Bullets for Technical Resumes](https://careerservices.cns.utexas.edu/resources/resumes/strong-bullets-technical-resumes) — explain what was built, why it mattered, and how; quantify users, teams, usage, and work scope where available.
-- [Yale Office of Career Strategy: Writing Impactful Resume Bullets](https://ocs.yale.edu/resources/writing-impactful-resume-bullets/) — action/project/result and XYZ structures; specific personal contribution, measurable impact, and context.
-- [SHRM: How to Spot AI-Generated Lies on a Resume](https://www.shrm.org/topics-tools/news/technology/how-to-spot-ai-generated-lies-on-a-resume) (2024) — recruiters interviewed describe probing claims and preferring genuine, explainable experience over embellished wording.
-- [Forbes Coaches Council: How Recruiters Can Tell You Used AI On Your Resume—and Why It Matters](https://www.forbes.com/councils/forbescoachescouncil/2025/08/07/how-recruiters-can-tell-you-used-ai-on-your-resume-and-why-it-matters/) (2025) — recruiter observations on generic buzzwords, copy-pasted content, poor job customization, and missing candidate-specific detail. This is expert commentary, not a controlled study.
-- [Jobscan: Can ATS Detect AI Resumes?](https://www.jobscan.co/blog/can-ats-detect-ai-resume/) (2026) — distinguishes job matching from authorship detection and identifies generic, unedited content as a human-review risk; a vendor article, not independent validation.
-- Project authority: `docs/prototype-plan.md` §7 supersedes conflicting early proposals in `docs/research-synthesis.md`; the latter informs only the boundary that the connected agent writes and tailors from evidence while the toolkit validates and evaluates.
+The examples demonstrate concise claims, evidence-bounded outcomes, attribution, and direct openings. Do not copy their facts into a resume.

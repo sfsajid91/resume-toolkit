@@ -1,5 +1,8 @@
 # Research Brief: Local Resume Toolkit for AI Agents
 
+> **Superseded:** This initial research brief is retained for history. Follow [prototype-plan.md](prototype-plan.md) for current product boundaries, workflows, schema, lint, CLI, rendering, and verification.
+
+
 ## Goal
 
 Research and propose a practical v0.1 for a local resume toolkit built with Bun and TypeScript.

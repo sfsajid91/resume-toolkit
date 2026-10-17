@@ -12,7 +12,7 @@ import {
   TextRun,
 } from "docx";
 import { DESIGN, DESIGN_VERSION, type PaperSize } from "./design.ts";
-import { displayUrl, type ResolvedResume } from "./resume.ts";
+import type { ResolvedResume } from "./resume.ts";
 import { writeStagedOutput } from "./io.ts";
 
 const rendererVersion = "docx@9.10.0";
@@ -156,61 +156,25 @@ function resumeParagraphs(resume: ResolvedResume, printableWidthTwips: number): 
     children.push(sectionHeading(section.title));
     for (const [entryIndex, entry] of section.entries.entries()) {
       const spacingBeforePt = entryIndex === 0 ? 0 : DESIGN.entryAfterPt;
-      const dateRun = entry.dateRange === ""
+      const dateRun = entry.dateText === ""
         ? []
-        : [text(entry.dateRange, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false })];
-
-      if (section.kind === "experience" || section.kind === "education") {
-        const role = entry.title ?? entry.name;
-        children.push(tabbedParagraph(
-          [text(role, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
-          dateRun,
-          printableWidthTwips,
-          { keepNext: true, spacingBeforePt },
-        ));
-        children.push(paragraph(
-          [entry.url
-            ? hyperlink(entry.url, entry.name, { sizePt: DESIGN.entryDetailFontPt, italic: true })
-            : text(entry.name, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary })],
-          "ResumeEntryDetail",
-          { keepNext: entry.bullets.length > 0 },
-        ));
-      } else if (section.kind === "projects") {
-        const projectRight: (TextRun | ExternalHyperlink)[] = [];
-        if (entry.url !== undefined) {
-          projectRight.push(hyperlink(entry.url, displayUrl(entry.url), { sizePt: DESIGN.entryDetailFontPt, bold: false }));
-        }
-        if (entry.dateRange !== "") {
-          if (projectRight.length > 0) projectRight.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, bold: false }));
-          projectRight.push(text(entry.dateRange, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false }));
-        }
-        children.push(tabbedParagraph(
-          [text(entry.name, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
-          projectRight,
-          printableWidthTwips,
-          { keepNext: entry.title !== undefined || entry.bullets.length > 0, spacingBeforePt },
-        ));
-        if (entry.title !== undefined) {
-          children.push(paragraph(
-            [text(entry.title, { sizePt: DESIGN.projectSubtitleFontPt, italic: true, color: DESIGN.colors.secondary })],
-            "ResumeProjectSubtitle",
-            { keepNext: entry.bullets.length > 0 },
-          ));
-        }
-      } else {
-        children.push(tabbedParagraph(
-          [text(entry.name, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
-          dateRun,
-          printableWidthTwips,
-          { keepNext: entry.issuer !== undefined || entry.bullets.length > 0, spacingBeforePt },
-        ));
-        if (entry.issuer !== undefined) {
-          children.push(paragraph(
-            [text(entry.issuer, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary })],
-            "ResumeEntryDetail",
-            { keepNext: entry.bullets.length > 0 },
-          ));
-        }
+        : [text(entry.dateText, { sizePt: DESIGN.entryDetailFontPt, color: DESIGN.colors.secondary, bold: false })];
+      const detailRuns: (TextRun | ExternalHyperlink)[] = [];
+      if (entry.detail !== "") {
+        detailRuns.push(text(entry.detail, { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+      }
+      if (entry.url !== undefined) {
+        if (detailRuns.length > 0) detailRuns.push(text(" | ", { sizePt: DESIGN.entryDetailFontPt, italic: true, color: DESIGN.colors.secondary }));
+        detailRuns.push(hyperlink(entry.url, entry.urlLabel ?? entry.url, { sizePt: DESIGN.entryDetailFontPt, italic: true }));
+      }
+      children.push(tabbedParagraph(
+        [text(entry.heading, { sizePt: DESIGN.entryHeadingFontPt, bold: true, color: DESIGN.colors.primary })],
+        dateRun,
+        printableWidthTwips,
+        { keepNext: detailRuns.length > 0 || entry.bullets.length > 0, spacingBeforePt },
+      ));
+      if (detailRuns.length > 0) {
+        children.push(paragraph(detailRuns, "ResumeEntryDetail", { keepNext: entry.bullets.length > 0 }));
       }
 
       for (const bullet of entry.bullets) {
@@ -252,7 +216,6 @@ function createDocument(resume: ResolvedResume, paper: PaperSize): Document {
         { id: "ResumeSectionHeading", name: "Resume Section Heading", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.sectionHeadingFontPt * 2, bold: true, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(DESIGN.sectionBeforePt, DESIGN.sectionAfterPt) } },
         { id: "ResumeEntryHeading", name: "Resume Entry Heading", basedOn: "Normal", next: "ResumeEntryDetail", run: { font: DESIGN.fontFamily, size: DESIGN.entryHeadingFontPt * 2, bold: true, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, 0) } },
         { id: "ResumeEntryDetail", name: "Resume Entry Detail", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.entryDetailFontPt * 2, color: DESIGN.colors.secondary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
-        { id: "ResumeProjectSubtitle", name: "Resume Project Subtitle", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.projectSubtitleFontPt * 2, italics: true, color: DESIGN.colors.secondary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
         { id: "ResumeBody", name: "Resume Body", basedOn: "Normal", next: "ResumeBody", run: { font: DESIGN.fontFamily, size: DESIGN.bodyFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.paragraphAfterPt) } },
         { id: "ResumeBullet", name: "Resume Bullet", basedOn: "Normal", next: "ResumeBullet", run: { font: DESIGN.fontFamily, size: DESIGN.bulletFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.bulletAfterPt) } },
         { id: "ResumeSkill", name: "Resume Skill", basedOn: "Normal", next: "ResumeSkill", run: { font: DESIGN.fontFamily, size: DESIGN.bodyFontPt * 2, color: DESIGN.colors.primary.slice(1) }, paragraph: { spacing: spacing(0, DESIGN.skillLineAfterPt) } },

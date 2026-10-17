@@ -3,12 +3,11 @@ import type { Application } from "./schema.ts";
 export type ResumeSectionKind = Application["resume"]["sections"][number]["kind"];
 
 type ResolvedEntry = {
-  readonly name: string;
-  readonly title?: string;
-  readonly issuer?: string;
-  readonly dateRange: string;
+  readonly heading: string;
+  readonly dateText: string;
+  readonly detail: string;
   readonly url?: string;
-  readonly urlDisplay?: string;
+  readonly urlLabel?: string;
   readonly bullets: readonly string[];
 };
 
@@ -46,7 +45,7 @@ const SECTION_TITLES: Record<ResumeSectionKind, string> = {
   certifications: "CERTIFICATIONS",
 };
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function formatDate(value: string): string {
   const match = /^(\d{4})-(\d{2})$/u.exec(value);
@@ -94,29 +93,50 @@ function groupSkills(skills: Application["resume"]["skills"]): ResolvedSkillGrou
 }
 
 export function resolveResume(application: Application): ResolvedResume {
-  const { basics, summary, sections, skills } = application.resume;
+  const { basics, summary, sections, skills, skillsPosition } = application.resume;
   const resolvedSections: ResolvedSection[] = sections.map(({ kind, items }) => ({
     kind,
     title: SECTION_TITLES[kind],
-    entries: items.map(({ name, title, issuer, start, end, url, bullets }) => ({
-      name,
-      ...(title === undefined ? {} : { title }),
-      ...(issuer === undefined ? {} : { issuer }),
-      dateRange: [
-        start === undefined ? undefined : formatDate(start),
-        end === null ? "Present" : end === undefined ? undefined : formatDate(end),
-      ].filter((value): value is string => value !== undefined).join(" – "),
-      ...(url === undefined ? {} : { url, urlDisplay: displayUrl(url) }),
-      bullets: bullets.map(({ text }) => text),
-    })),
+    entries: items.map(({ name, title, issuer, location, start, end, expires, url, bullets }) => {
+      const certification = kind === "certifications";
+      const expiration = expires ?? (certification && typeof end === "string" ? end : undefined);
+      const dateText = certification
+        ? [
+          start === undefined ? undefined : `Issued ${formatDate(start)}`,
+          expiration === undefined ? undefined : `Expires ${formatDate(expiration)}`,
+        ].filter((value): value is string => value !== undefined).join(" · ")
+        : [
+          start === undefined ? undefined : formatDate(start),
+          end === null ? "Present" : end === undefined ? undefined : formatDate(end),
+        ].filter((value): value is string => value !== undefined).join(" – ");
+      const detailValues = kind === "experience" || kind === "education"
+        ? url === undefined ? [name, location] : []
+        : kind === "projects" ? [title, location] : [issuer, location];
+      const detail = detailValues.filter((value): value is string => value !== undefined).join(", ");
+      return {
+        heading: kind === "experience" || kind === "education" ? title ?? name : name,
+        dateText,
+        detail,
+        ...(url === undefined ? {} : {
+          url,
+          urlLabel: kind === "projects"
+            ? displayUrl(url)
+            : kind === "experience" || kind === "education"
+              ? [name, location].filter((value): value is string => value !== undefined).join(", ")
+              : name,
+        }),
+        bullets: bullets.map(({ text }) => text),
+      };
+    }),
   }));
   const skillGroups = groupSkills(skills);
   if (skillGroups.length > 0) {
     const experienceIndex = resolvedSections.findIndex(({ kind }) => kind === "experience");
-    resolvedSections.splice(experienceIndex < 0 ? 0 : experienceIndex + 1, 0, {
-      kind: "skills",
-      title: "TECHNICAL SKILLS",
-    });
+    const position = skillsPosition ?? "after-experience";
+    const index = position === "end"
+      ? resolvedSections.length
+      : position === "after-summary" ? 0 : experienceIndex < 0 ? 0 : experienceIndex + 1;
+    resolvedSections.splice(index, 0, { kind: "skills", title: "TECHNICAL SKILLS" });
   }
 
   return {

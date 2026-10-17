@@ -119,7 +119,6 @@ export async function exportPdf(
         "--input", `section-heading-font-pt=${DESIGN.sectionHeadingFontPt}`,
         "--input", `entry-heading-font-pt=${DESIGN.entryHeadingFontPt}`,
         "--input", `entry-detail-font-pt=${DESIGN.entryDetailFontPt}`,
-        "--input", `project-subtitle-font-pt=${DESIGN.projectSubtitleFontPt}`,
         "--input", `margin-top-mm=${DESIGN.marginsMm.top}`,
         "--input", `margin-right-mm=${DESIGN.marginsMm.right}`,
         "--input", `margin-bottom-mm=${DESIGN.marginsMm.bottom}`,

@@ -1,6 +1,6 @@
 export type PaperSize = "a4" | "letter";
 
-export const DESIGN_VERSION = "2.3.0";
+export const DESIGN_VERSION = "2.4.0";
 export const DESIGN = {
   fontFamily: "Cambria",
   typstFontFamily: "Caladea",
@@ -14,7 +14,6 @@ export const DESIGN = {
   sectionHeadingFontPt: 12,
   entryHeadingFontPt: 11,
   entryDetailFontPt: 11,
-  projectSubtitleFontPt: 11,
   marginsMm: { top: 18, right: 18, bottom: 18, left: 18 },
   typstLeadingEm: 0.76,
   typstTrailingGapEm: 0.7,
@@ -24,10 +23,10 @@ export const DESIGN = {
   headlineAfterPt: 3,
   headerAfterPt: 8,
   bulletAfterPt: 2,
-  entryAfterPt: 6,
+  entryAfterPt: 4,
   skillLineAfterPt: 2,
-  sectionBeforePt: 8,
-  sectionAfterPt: 3,
+  sectionBeforePt: 12,
+  sectionAfterPt: 4,
   bulletHangingIndentMm: 4.5,
   sectionRulePt: 0.6,
   papers: {

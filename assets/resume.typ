@@ -48,6 +48,30 @@
   #text(size: points(design.at("section-heading-font-pt")), weight: "bold", fill: primary)[#value]
   #line(length: 100%, stroke: points(design.at("section-rule-pt")) + primary)
 ]
+#let entry-header(entry) = block(sticky: true)[
+  #grid(
+    columns: (1fr, auto),
+    column-gutter: 8pt,
+    [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.heading]],
+    align(right)[#if entry.dateText != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateText]]],
+  )
+  #if entry.detail != "" or ("url" in entry) [
+    #par(spacing: points(design.at("paragraph-after-pt")))[
+      #if entry.detail != "" [#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.detail]]
+      #if "url" in entry [
+        #if entry.detail != "" [ | ]
+        #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.urlLabel]]
+      ]
+    ]
+  ]
+]
+
+#let skill-line(group) = {
+  let label = if "category" in group { group.category } else { "Skills" }
+  par(spacing: points(design.at("skill-line-after-pt")))[
+    #text(weight: "bold")[#label:] #group.labels.join(", ")
+  ]
+}
 
 #let contacts = (
   if "location" in resume.basics { resume.basics.location } else { none },
@@ -100,69 +124,27 @@
 
 
 #for section in resume.sections [
-  #if section.kind == "skills" [
-    #section-heading(section.title)
-    #for group in resume.skills [
-      #let label = if "category" in group { group.category } else { "Skills" }
-      #par(spacing: points(design.at("skill-line-after-pt")))[
-        #text(weight: "bold")[#label:] #group.labels.join(", ")
-      ]
-    ]
-  ] else if section.entries.len() > 0 [
-
-    #section-heading(section.title)
-    #for (entry-index, entry) in section.entries.enumerate() [
-      #if entry-index > 0 [#v(points(design.at("entry-after-pt")))]
-      #if section.kind == "experience" or section.kind == "education" [
-        #block(sticky: entry.bullets.len() > 0)[
-          #grid(
-            columns: (1fr, auto),
-            column-gutter: 8pt,
-            [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.title]],
-            align(right)[#if entry.dateRange != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateRange]]],
-          )
-          #par(spacing: points(design.at("paragraph-after-pt")))[
-            #if "url" in entry [
-              #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.name]]
-            ] else [
-              #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.name]
-            ]
-          ]
-        ]
-      ] else if section.kind == "projects" [
-        #block(sticky: entry.bullets.len() > 0)[
-          #grid(
-            columns: (1fr, auto),
-            column-gutter: 8pt,
-            [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.name]],
-            align(right)[
-              #if "url" in entry [
-                #link(entry.url)[#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.urlDisplay]]
-              ]
-              #if "url" in entry and entry.dateRange != "" [ | ]
-              #if entry.dateRange != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateRange]]
-            ],
-          )
-          #if "title" in entry [
-            #par(spacing: points(design.at("paragraph-after-pt")))[
-              #text(size: points(design.at("project-subtitle-font-pt")), style: "italic", fill: secondary)[#entry.title]
-            ]
-          ]
+  #if section.kind == "skills" and resume.skills.len() > 0 [
+    #for (group-index, group) in resume.skills.enumerate() [
+      #if group-index == 0 [
+        #block(sticky: true)[
+          #section-heading(section.title)
+          #skill-line(group)
         ]
       ] else [
-        #block(sticky: entry.bullets.len() > 0)[
-          #grid(
-            columns: (1fr, auto),
-            column-gutter: 8pt,
-            [#text(size: points(design.at("entry-heading-font-pt")), weight: "bold")[#entry.name]],
-            align(right)[#if entry.dateRange != "" [#text(size: points(design.at("entry-detail-font-pt")), fill: secondary)[#entry.dateRange]]],
-          )
-          #if "issuer" in entry [
-            #par(spacing: points(design.at("paragraph-after-pt")))[
-              #text(size: points(design.at("entry-detail-font-pt")), style: "italic", fill: secondary)[#entry.issuer]
-            ]
-          ]
+        #skill-line(group)
+      ]
+    ]
+  ] else if section.kind != "skills" and section.entries.len() > 0 [
+    #for (entry-index, entry) in section.entries.enumerate() [
+      #if entry-index == 0 [
+        #block(sticky: true)[
+          #section-heading(section.title)
+          #entry-header(entry)
         ]
+      ] else [
+        #v(points(design.at("entry-after-pt")))
+        #entry-header(entry)
       ]
       #if entry.bullets.len() > 0 [
         #list(
@@ -175,4 +157,3 @@
     ]
   ]
 ]
-

@@ -89,6 +89,15 @@ describe("PDF export", () => {
             "PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS",
             "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
           ]) expect(lines.some(({ text: value }) => value === heading)).toBe(true);
+          const headings = [
+            "PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "TECHNICAL SKILLS",
+            "SELECTED PROJECTS", "EDUCATION", "CERTIFICATIONS",
+          ];
+          const pages = text.split("\f").filter((page) => page.trim().length > 0);
+          for (const page of pages) {
+            const lastLine = page.trim().split(/\r?\n/u).map((line) => line.trim()).filter(Boolean).at(-1);
+            expect(headings).not.toContain(lastLine);
+          }
           expect(text).not.toContain("PROFESSIONAL EXPERIENCETECHNICAL SKILLS");
           expect(text).not.toContain("TECHNICAL SKILLSSELECTED PROJECTS");
           expect(text).not.toContain("Senior Software EngineerNorthstar Systems");
@@ -139,6 +148,7 @@ describe("PDF export", () => {
     ];
     application.resume.skills[0]!.category = "Languages";
     application.resume.skills.push({ id: "skill-react", label: "React", category: "Frontend", evidenceIds: [] });
+    application.resume.skillsPosition = "after-summary";
     const resume = resolveResume(application);
     const directory = await mkdtemp(join(tmpdir(), "resume-pdf-options-test-"));
     const outputPath = join(directory, "resume.pdf");
@@ -156,10 +166,39 @@ describe("PDF export", () => {
       expect(text.split(/\r?\n/u).map((line) => line.trim())).toContain("Built dependable APIs. Mentored a team.");
       expect(normalized).toContain("Languages: TypeScript");
       expect(normalized).toContain("Frontend: React");
-      expect(normalized.indexOf("PROFESSIONAL EXPERIENCE")).toBeLessThan(normalized.indexOf("TECHNICAL SKILLS"));
+      expect(normalized.indexOf("TECHNICAL SKILLS")).toBeLessThan(normalized.indexOf("PROFESSIONAL EXPERIENCE"));
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   });
 
+  test.skipIf(!inspectionToolsAvailable)("keeps long project titles independent of URLs and formats location and certification dates", async () => {
+    const resume = await fixture("lint-bad-application.json");
+    const directory = await mkdtemp(join(tmpdir(), "resume-pdf-layout-test-"));
+    const outputPath = join(directory, "lint-layout.pdf");
+    const projectTitle = "Multi Region Incident Response and Deployment Recovery Readiness Toolkit";
+    try {
+      await exportPdf(resume, { outputPath, paper: "a4", force: false });
+      const [text, layout, urls] = await Promise.all([
+        command("pdftotext", [outputPath, "-"]),
+        command("pdftotext", ["-bbox-layout", outputPath, "-"]),
+        command("pdfinfo", ["-url", outputPath]),
+      ]);
+      const lines = [...layout.matchAll(/<line\b[^>]*>([\s\S]*?)<\/line>/gu)].map(([, content]) =>
+        [...(content ?? "").matchAll(/<word\b[^>]*>([\s\S]*?)<\/word>/gu)]
+          .map(([, word]) => word ?? "")
+          .join(" "),
+      );
+      const projectHeader = lines.find((line) => line.startsWith(projectTitle));
+      if (projectHeader === undefined) throw new Error("Long project title wrapped or disappeared from its header line.");
+      expect(projectHeader).toContain("Apr 2019 – Apr 2020");
+      expect(projectHeader).not.toContain("example.org");
+      expect(lines.some((line) => line.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
+      expect(text).toContain("Northstar — Recovery Systems, Portland, OR");
+      expect(text).toContain("Issued Mar 2018 · Expires Mar 2021");
+      expect(urls).toContain("https://example.org/projects/recovery-readiness-toolkit");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
 });

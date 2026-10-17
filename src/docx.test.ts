@@ -96,7 +96,6 @@ describe("editable DOCX export", () => {
         ResumeSectionHeading: 24,
         ResumeEntryHeading: 22,
         ResumeEntryDetail: 22,
-        ResumeProjectSubtitle: 22,
         ResumeBody: 22,
         ResumeBullet: 21,
         ResumeSkill: 22,
@@ -199,6 +198,50 @@ describe("editable DOCX export", () => {
       const broken = { ...resume, basics: undefined } as unknown as ResolvedResume;
       await expect(exportDocx(broken, { outputPath: output, paper: "a4", force: true })).rejects.toThrow();
       expect(await zipPart(output, "word/document.xml")).toContain('w:w="12240"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+  test("keeps project links on the subtitle line and renders locations and certification dates", async () => {
+    const resume = await fixture("../examples/lint-bad-application.json");
+    const directory = await temporaryDirectory();
+    const output = join(directory, "lint-layout.docx");
+    const projectTitle = "Multi Region Incident Response and Deployment Recovery Readiness Toolkit";
+    try {
+      await exportDocx(resume, { outputPath: output, paper: "a4", force: false });
+      const [body, styles] = await Promise.all([
+        zipPart(output, "word/document.xml"),
+        zipPart(output, "word/styles.xml"),
+      ]);
+      const paragraphs = paragraphTexts(body);
+      const projectHeader = paragraphs.find((value) => value.startsWith(projectTitle));
+      expect(projectHeader).toContain("Apr 2019 – Apr 2020");
+      expect(projectHeader).not.toContain("example.org");
+      expect(paragraphs.some((value) => value.includes("example.org/projects/recovery-readiness-toolkit"))).toBe(true);
+      expect(paragraphs).toContain("Northstar — Recovery Systems, Portland, OR");
+      expect(paragraphs.some((value) => value.includes("Issued Mar 2018 · Expires Mar 2021"))).toBe(true);
+      const headingStyle = paragraphStyle(styles, "ResumeSectionHeading");
+      expect(headingStyle).toContain('w:before="240"');
+      expect(headingStyle).toContain('w:after="80"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+  test("places skills after summary or at the end when requested", async () => {
+    const raw = JSON.parse(await readFile(new URL("../examples/application.json", import.meta.url), "utf8")) as unknown;
+    const application = applicationSchema.parse(raw);
+    const directory = await temporaryDirectory();
+    try {
+      for (const [position, beforeExperience] of [["after-summary", true], ["end", false]] as const) {
+        application.resume.skillsPosition = position;
+        const output = join(directory, `${position}.docx`);
+        await exportDocx(resolveResume(application), { outputPath: output, paper: "a4", force: false });
+        const paragraphs = paragraphTexts(await zipPart(output, "word/document.xml"));
+        const skillsIndex = paragraphs.indexOf("TECHNICAL SKILLS");
+        const experienceIndex = paragraphs.indexOf("PROFESSIONAL EXPERIENCE");
+        expect(skillsIndex >= 0).toBe(true);
+        expect(beforeExperience ? skillsIndex < experienceIndex : skillsIndex > experienceIndex).toBe(true);
+      }
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
