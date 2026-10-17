@@ -12,7 +12,7 @@ description: >-
 Choose A for a job-targeted resume, B for an existing file to fix without a job, and C when the user supplies a finished snapshot only for export.
 
 - **A — Tailor to a job:** use confirmed evidence, optional Jev evaluation, and the remote-consent safeguards below. Evidence IDs on claims and skills and exact nonempty requirement quotes from `job.rawText` are mandatory for evaluation.
-- **B — Review or fix an existing resume:** no job or Jev. Extract facts from supplied files with available tools, confirm uncertain facts, build a snapshot, run the gaps checklist and lint, ask missing items exactly once in one message only if gaps exist before rewriting, fix every `lint.*` warning, render, inspect artifacts, and report changes. Link confirmed facts to evidence where possible; evidence is not a blocker.
+- **B — Review or fix an existing resume:** no job or Jev. Use supplied facts to build a general base resume, not an invented job match. Extract facts with available tools, run the gaps checklist, and batch only material unanswered questions once before rewriting. Omit unresolved claims, fix lint findings without padding or inventing facts, render, inspect artifacts, and report changes. Evidence links help trace facts but are not a blocker.
 - **C — Render only:** use the supplied snapshot, validate it, then render and inspect artifacts.
 
 Use `resume-toolkit` when installed. `bun run src/cli.ts` is only for development inside the repository; do not install from the repository as a user workflow. Read [CLI reference](references/cli.md) when invoking commands or interpreting flags/exit codes. Read [data conventions](references/data-conventions.md) when creating or editing snapshots. Read [artifact review](references/artifact-review.md) after every render.
@@ -32,7 +32,7 @@ Read [the writing guide](writing-guide.md) before drafting or revising. In modes
 
 Run `resume-toolkit validate --input <snapshot.json> --json`. Fix validation errors; warnings do not block rendering. In modes A and B, run `resume-toolkit lint --input <snapshot.json> --json`, fix every lint finding, and rerun until clean. In mode C, lint warnings may be reported but do not block rendering. Clean lint does not imply Jev 2/2.
 
-**3b. Semantic review:** In modes A and B, run the writing guide's final review independently of lint. Check ownership, credential status, chronology, and whether each claim survives an interview explanation. In mode A, compare the draft against the requirement map; report missing qualifications rather than inventing coverage. Clean lint is not evidence of factual support or job fit.
+**3b. Semantic review:** In modes A and B, run the writing guide's final review independently of lint. Compare each claim with its source: research is not implementation, a prototype is not production, and using a framework does not prove a particular feature. Check ownership, credential status, chronology, and interview explainability. Keep a summary only when it adds supported context rather than repeating tools. In mode A, compare against the requirement map and report missing qualifications. Clean lint is not evidence of factual support, good writing, or job fit.
 
 **Checkpoint:** Stop on validation errors. In modes A and B, stop until lint is clean; in mode C, continue past warnings.
 
